@@ -203,7 +203,7 @@ int LYMVideoPlayer::decodeAudioData(){
         return 0;
     }
     //取出头部的数据包
-    AVPacket &pkt = aPackets_->front();
+    AVPacket pkt = aPackets_->front();
     aPackets_->pop_front();
     //解锁
     aCondLock_->unlock();
