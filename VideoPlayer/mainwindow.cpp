@@ -37,7 +37,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 void MainWindow::onPlayerStateFailed(LYMVideoPlayer *videoPlayer){
-    videoPlayer->stop();
     QMessageBox::critical(nullptr,"提示","播放失败！");
 }
 void MainWindow::onPlayerStateChanged(LYMVideoPlayer * videoPlayer){
@@ -92,7 +91,7 @@ void MainWindow::on_openFileBtn_clicked()
                                                 "音视频文件(*.mp4 *.mkv *.mp3 *.aac)");
     qDebug()<<"打开的文件是: "<<name;
     if(name.isEmpty())return;
-    player_->setFileName(name.toUtf8().toStdString());
+    player_->SetFileName(name.toUtf8().toStdString());
     player_->play();
 
 }

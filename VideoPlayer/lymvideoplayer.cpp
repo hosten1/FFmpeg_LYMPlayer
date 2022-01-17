@@ -13,11 +13,10 @@
 
 #define RRROR_END(ret,fun) \
     if (ret < 0) { \
-    LYM_ERROR_BUFF(ret); \
-    std::cout  << #fun<< " Error " << errbuf << std::endl; \
-    emit playerFailed(this);\
-    freeSouce(); \
-    return; \
+       LYM_ERROR_BUFF(ret); \
+       std::cout  << #fun<< " Error " << errbuf << std::endl; \
+       fataerror(); \
+       return; \
     }
 
 #define RRROR_RETRUN(ret,msg) \
@@ -52,19 +51,19 @@ void LYMVideoPlayer::play(){
         }).detach();//读取完文件释放线程
     }
 
-    setState(Playing);
+    SetState(Playing);
 }
 void LYMVideoPlayer::pause(){
     if(state_ != Playing)return;
     // 状态可能是 正在播放
     //
-    setState(Paused);
+    SetState(Paused);
 }
 void LYMVideoPlayer::stop(){
     if(state_ == Stopped)return;
     // 状态可能是 正在播放 暂停
     //
-    setState(Stopped);
+    SetState(Stopped);
     //释放资源
     freeSouce();
 }
@@ -81,16 +80,16 @@ LYMVideoPlayer::PlayState LYMVideoPlayer::getState(){
 
     return state_;
 }
-void LYMVideoPlayer::setFileName(std::string fileNmae){
+void LYMVideoPlayer::SetFileName(std::string fileNmae){
     if(fileNmae.length() < 0)return;
-    fileName_ = fileNmae;
+     memcpy(fileName_,fileNmae.c_str(),fileNmae.length()+1);
 }
 void LYMVideoPlayer::onInitFinish(std::function<void (LYMVideoPlayer *)> initFinish){
     initFinish_ = initFinish;
 }
 #pragma mark --- 私有方法
 // Private Method
-void LYMVideoPlayer::setState(LYMVideoPlayer::PlayState stateT){
+void LYMVideoPlayer::SetState(LYMVideoPlayer::PlayState stateT){
     if(stateT == state_){
         return;
     }
@@ -103,13 +102,13 @@ void LYMVideoPlayer::readFile(){
     //    const char  *inFileName = fileName_;
     // 创建解封装上下文
     std::cout  << " 开始读取文件 " << fileName_ << std::endl;
-    ret =  avformat_open_input(&formatcontext_,fileName_.c_str(), nullptr, nullptr);
+    ret =  avformat_open_input(&formatcontext_,fileName_, nullptr, nullptr);
 
     RRROR_END(ret,avformat_open_input);
     ret = avformat_find_stream_info(formatcontext_, nullptr);
     RRROR_END(ret,avformat_find_stream_info);
     //打印流信息到控制台
-    av_dump_format(formatcontext_, 0, fileName_.c_str(), 0);
+    av_dump_format(formatcontext_, 0, fileName_, 0);
     fflush(stderr);
     bool hasAudio = setupAudio() >= 0;
     bool hasVodeo  = setupVideo() >= 0;
@@ -196,4 +195,9 @@ void LYMVideoPlayer::freeSouce(){
     avformat_close_input(&formatcontext_);
     freeAudioSource();
     freeVideoSource();
+}
+void LYMVideoPlayer::fataerror(){
+    SetState(Stopped);
+    emit playerFailed(this);
+    freeSouce();
 }

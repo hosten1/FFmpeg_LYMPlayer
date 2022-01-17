@@ -48,7 +48,7 @@ public:
     /**获取状态**/
     PlayState getState();
     /**设置文件名**/
-    void setFileName(std::string fileNmae);
+    void SetFileName(std::string fileNmae);
     //文件初始化完成回调
     void onInitFinish( std::function<void (LYMVideoPlayer *player)> initFinish);
     void setVolumn(int volumn);
@@ -106,19 +106,20 @@ private:
 
     /**当前状态**/
     PlayState state_ = Stopped;
-    std::string fileName_;
+    char fileName_[512];
 
     AVFormatContext *formatcontext_;
 
     std::function<void (LYMVideoPlayer *player)> initFinish_ = nullptr;
 
     /**改变状态*/
-    void setState(PlayState stateT);
+    void SetState(PlayState stateT);
     void readFile(void);
 
     int ininDeCodec(AVMediaType type,AVCodecContext **decodecCtx,AVStream **stream);
 
     void freeSouce();
+    void fataerror();
 
 };
 
