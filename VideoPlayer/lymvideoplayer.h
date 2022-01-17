@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <list>
+#include <string>
+
 #include "lymcodationlock.h"
 extern "C" {
 #include "libavutil/avutil.h"
@@ -46,7 +48,7 @@ public:
     /**获取状态**/
     PlayState getState();
     /**设置文件名**/
-    void setFileName(const char *fileName);
+    void setFileName(std::string fileNmae);
     //文件初始化完成回调
     void onInitFinish( std::function<void (LYMVideoPlayer *player)> initFinish);
     void setVolumn(int volumn);
@@ -104,7 +106,7 @@ private:
 
     /**当前状态**/
     PlayState state_ = Stopped;
-    const char *fileName_;
+    std::string fileName_;
 
     AVFormatContext *formatcontext_;
 

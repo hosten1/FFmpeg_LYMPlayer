@@ -92,7 +92,7 @@ void MainWindow::on_openFileBtn_clicked()
                                                 "音视频文件(*.mp4 *.mkv *.mp3 *.aac)");
     qDebug()<<"打开的文件是: "<<name;
     if(name.isEmpty())return;
-    player_->setFileName(name.toUtf8().data());
+    player_->setFileName(name.toUtf8().toStdString());
     player_->play();
 
 }

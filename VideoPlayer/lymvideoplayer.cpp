@@ -81,9 +81,9 @@ LYMVideoPlayer::PlayState LYMVideoPlayer::getState(){
 
     return state_;
 }
-void LYMVideoPlayer::setFileName(const char *fileName){
-    if(!fileName)return;
-    fileName_ = fileName;
+void LYMVideoPlayer::setFileName(std::string fileNmae){
+    if(fileNmae.length() < 0)return;
+    fileName_ = fileNmae;
 }
 void LYMVideoPlayer::onInitFinish(std::function<void (LYMVideoPlayer *)> initFinish){
     initFinish_ = initFinish;
@@ -103,13 +103,13 @@ void LYMVideoPlayer::readFile(){
     //    const char  *inFileName = fileName_;
     // 创建解封装上下文
     std::cout  << " 开始读取文件 " << fileName_ << std::endl;
-    ret =  avformat_open_input(&formatcontext_,fileName_, nullptr, nullptr);
+    ret =  avformat_open_input(&formatcontext_,fileName_.c_str(), nullptr, nullptr);
 
     RRROR_END(ret,avformat_open_input);
     ret = avformat_find_stream_info(formatcontext_, nullptr);
     RRROR_END(ret,avformat_find_stream_info);
     //打印流信息到控制台
-    av_dump_format(formatcontext_, 0, fileName_, 0);
+    av_dump_format(formatcontext_, 0, fileName_.c_str(), 0);
     fflush(stderr);
     bool hasAudio = setupAudio() >= 0;
     bool hasVodeo  = setupVideo() >= 0;
