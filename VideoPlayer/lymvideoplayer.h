@@ -64,7 +64,7 @@ public:
 signals:
     void statsChanged(LYMVideoPlayer *player);
     void playerFailed(LYMVideoPlayer *player);
-    void frameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,DecodeVideoSpec videoSpec);
+    void frameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,DecodeVideoSpec &videoSpec);
 private:
     /**音频属性和方法**/
     AVCodecContext *aDecodecCtx_;

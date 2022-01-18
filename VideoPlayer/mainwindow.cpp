@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
    // 注册信号的参数类型 保证能发出信号
-    qRegisterMetaType<LYMVideoPlayer::DecodeVideoSpec>("DecodeVideoSpec");
+    qRegisterMetaType<LYMVideoPlayer::DecodeVideoSpec>("DecodeVideoSpec&");
      qRegisterMetaType<LYMVideoPlayer>("LYMVideoPlayer");
     //创建播放器
     player_ = make_unique<LYMVideoPlayer>();

@@ -2,8 +2,11 @@
 #define VIDEORENDERWIDGET_H
 
 #include <QWidget>
-#include <QImage>
+
 #include "lymvideoplayer.h"
+
+class QImage;
+class QRect;
 
 class videoRenderWidget : public QWidget
 {
@@ -12,9 +15,10 @@ public:
     explicit videoRenderWidget(QWidget *parent = nullptr);
     ~videoRenderWidget();
 public slots:
-    void onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,LYMVideoPlayer::DecodeVideoSpec videoSpec);
+    void onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,LYMVideoPlayer::DecodeVideoSpec &videoSpec);
 private:
     QImage *img_ = nullptr;
+    QRect rect_;
 
   void paintEvent(QPaintEvent *event) override;
 
