@@ -129,8 +129,7 @@ void LYMVideoPlayer::readFile(){
             if (pkt.stream_index == aStream_->index) {
                 addAudioPkt(pkt);
             }else if (pkt.stream_index == vStream_->index){
-                //            addVideoPkt(pkt);
-                av_packet_unref(&pkt);
+                addVideoPkt(pkt);
             }
         }else if(ret == AVERROR_EOF){
             //读取到文件末尾了  直接退出循环

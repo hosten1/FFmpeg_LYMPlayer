@@ -4,19 +4,29 @@
 #include <QDebug>
 #include <qstring.h>
 #include <QMessageBox>
+#include "videorenderwidget.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->volumeSlider->setRange(LYMVideoPlayer::LYMVolumnRange::Min,LYMVideoPlayer::LYMVolumnRange::Max);
-    ui->volumeSlider->setValue(LYMVideoPlayer::LYMVolumnRange::Max);
+   // 注册信号的参数类型 保证能发出信号
+    qRegisterMetaType<LYMVideoPlayer::DecodeVideoSpec>("DecodeVideoSpec");
+     qRegisterMetaType<LYMVideoPlayer>("LYMVideoPlayer");
     //创建播放器
     player_ = make_unique<LYMVideoPlayer>();
+
+    ui->volumeSlider->setRange(LYMVideoPlayer::LYMVolumnRange::Min,LYMVideoPlayer::LYMVolumnRange::Max);
+    ui->volumeSlider->setValue(LYMVideoPlayer::LYMVolumnRange::Max);
     //连接槽函数
-    connect(player_.get(),&LYMVideoPlayer::statsChanged,this,&MainWindow::onPlayerStateChanged);
-    connect(player_.get(),&LYMVideoPlayer::playerFailed,this,&MainWindow::onPlayerStateFailed);
+    connect(player_.get(),&LYMVideoPlayer::statsChanged,
+            this,&MainWindow::onPlayerStateChanged);
+    connect(player_.get(),&LYMVideoPlayer::playerFailed,
+            this,&MainWindow::onPlayerStateFailed);
+    connect(player_.get(),&LYMVideoPlayer::frameDecode,
+            ui->videoWidget,&videoRenderWidget::onPlayerFrameDecode);
     player_->onInitFinish([this](LYMVideoPlayer *player){
         int64_t micseconds =  player->getDuration();
         ui->currentSlider->setRange(0,micseconds);

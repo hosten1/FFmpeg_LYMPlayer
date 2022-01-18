@@ -7,13 +7,14 @@
 
 #include "lymcodationlock.h"
 extern "C" {
-#include "libavutil/avutil.h"
-#include "libavdevice/avdevice.h"
-#include "libavformat/avformat.h"
-#include "libavcodec/avcodec.h"
-#include "libavutil/imgutils.h"
-#include "libswresample/swresample.h"
-#include "libavutil/imgutils.h"
+    #include "libavutil/avutil.h"
+    #include "libavdevice/avdevice.h"
+    #include "libavformat/avformat.h"
+    #include "libavcodec/avcodec.h"
+    #include "libavutil/imgutils.h"
+    #include "libswresample/swresample.h"
+    #include "libavutil/imgutils.h"
+    #include "libswscale/swscale.h"
 }
 
 
@@ -33,6 +34,11 @@ public:
         int channalLayout = 0;
         int bytesPerSampleFrame = 0;
     }DecodeAudioSpec;
+    typedef struct DecodeVideoSpec {
+        int width = 0;
+        int height = 0;
+        AVPixelFormat fmt= AV_PIX_FMT_YUV420P;
+    }DecodeVideoSpec;
     typedef enum LYMVolumnRange {
           Min = 0,
           Max = 100,
@@ -58,6 +64,7 @@ public:
 signals:
     void statsChanged(LYMVideoPlayer *player);
     void playerFailed(LYMVideoPlayer *player);
+    void frameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,DecodeVideoSpec videoSpec);
 private:
     /**音频属性和方法**/
     AVCodecContext *aDecodecCtx_;
@@ -91,18 +98,23 @@ private:
 
     /**视频频属性和方法**/
     AVCodecContext *vDecodecCtx_;
+    SwsContext   *vSwsCtx_;
     //流的标记
     AVStream *vStream_ = nullptr;
-    AVFrame *vFrame_= nullptr;
+    AVFrame *vSwsInFrame_= nullptr,*vSwsoutFrame_= nullptr;
     std::unique_ptr<std::list<AVPacket>> vPackets_;
     std::unique_ptr<LYMCodationLock> vCondLock_;
+     DecodeVideoSpec vOutSpec_;
+
+
 
     int setupVideo(void);
     void addVideoPkt(AVPacket pkt);
     void clearVideoPkts();
     int initVideoSDL();
+    int initVideoSws();
     void freeVideoSource();
-
+    void decodeVideoData();
 
     /**当前状态**/
     PlayState state_ = Stopped;

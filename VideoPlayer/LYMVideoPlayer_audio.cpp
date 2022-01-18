@@ -16,10 +16,10 @@ static int const dstSampleRate = 44100;
 
 #define RRROR_END(ret,fun) \
     if (ret < 0) { \
-    LYM_ERROR_BUFF(ret); \
-    emit playerFailed(this);\
-    std::cout  << #fun<< " Error " << errbuf << std::endl; \
-    goto __END; \
+       LYM_ERROR_BUFF(ret); \
+       std::cout  << #fun<< " Error " << errbuf << std::endl; \
+       fataerror(); \
+       return; \
     }
 
 #define RRROR_RETRUN(ret,msg) \
@@ -89,7 +89,6 @@ int LYMVideoPlayer::initAuidoSwr(){
     }
     aOutFrame_ = av_frame_alloc();
     if(!aOutFrame_){
-        av_frame_free(&aSwrInFrame_);
         std::cout  << "av_frame_alloc aOutFrame_ Error " << std::endl;
         return -1;
     }

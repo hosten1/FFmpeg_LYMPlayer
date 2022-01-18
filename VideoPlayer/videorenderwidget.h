@@ -2,12 +2,21 @@
 #define VIDEORENDERWIDGET_H
 
 #include <QWidget>
+#include <QImage>
+#include "lymvideoplayer.h"
 
 class videoRenderWidget : public QWidget
 {
     Q_OBJECT
 public:
     explicit videoRenderWidget(QWidget *parent = nullptr);
+    ~videoRenderWidget();
+public slots:
+    void onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,LYMVideoPlayer::DecodeVideoSpec videoSpec);
+private:
+    QImage *img_ = nullptr;
+
+  void paintEvent(QPaintEvent *event) override;
 
 signals:
 
