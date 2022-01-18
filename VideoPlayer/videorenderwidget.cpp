@@ -10,7 +10,10 @@ videoRenderWidget::videoRenderWidget(QWidget *parent) : QWidget(parent)
     qDebug() << ":videoRenderWidget(QWidget *parent)";
 }
 videoRenderWidget::~videoRenderWidget(){
-
+    if(img_){
+        delete  img_;
+        img_ = nullptr;
+    }
 }
 void videoRenderWidget::paintEvent(QPaintEvent *event){
     if(img_ == nullptr)return;

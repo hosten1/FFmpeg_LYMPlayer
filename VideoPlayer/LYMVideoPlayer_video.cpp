@@ -47,13 +47,15 @@ int LYMVideoPlayer::setupVideo(void){
     return 0;
 }
 int LYMVideoPlayer::initVideoSws(){
-
-    vOutSpec_.width = vDecodecCtx_->width;
-    vOutSpec_.height = vDecodecCtx_->height;
+    int inWidth = vDecodecCtx_->width;
+    int inHeight = vDecodecCtx_->height;
+    //  保证视频是 16的倍数
+    vOutSpec_.width  = inWidth  >> 4 << 4;
+    vOutSpec_.height = inHeight >> 4 << 4;
     vOutSpec_.fmt = AV_PIX_FMT_RGB24;
 
 // 初始化 视频转换上下文
-    vSwsCtx_ = sws_getContext(vDecodecCtx_->width,vDecodecCtx_->height, vDecodecCtx_->pix_fmt,
+    vSwsCtx_ = sws_getContext(inWidth,inHeight, vDecodecCtx_->pix_fmt,
                               vOutSpec_.width, vOutSpec_.height, vOutSpec_.fmt,
                               SWS_BILINEAR, nullptr,nullptr, nullptr);
     if(!vSwsCtx_){
