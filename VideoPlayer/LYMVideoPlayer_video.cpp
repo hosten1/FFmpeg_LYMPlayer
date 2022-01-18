@@ -115,6 +115,10 @@ void LYMVideoPlayer::decodeVideoData(){
         vCondLock_->unlock();
 
         int ret = avcodec_send_packet(vDecodecCtx_, &vPkt);
+        if(vPkt.dts != AV_NOPTS_VALUE){
+            //计算当前时间
+            vTimes_ = av_q2d(aStream_->time_base) * vPkt.dts;
+        }
         av_packet_unref(&vPkt);
         RRROR_CONTINUE(ret,avcodec_send_packet);
         // 这里的数据不一定是返回一个，有可能返回多个
@@ -130,12 +134,23 @@ void LYMVideoPlayer::decodeVideoData(){
                 std::cout  << "avcodec_receive_frame "<< " Error " << errbuf << std::endl;
                 break;
             }
-            //延迟下
-             SDL_Delay(1000/23.0f);
+
             //重采样成rgb格式数据
             ret = sws_scale(vSwsCtx_, vSwsInFrame_->data, vSwsInFrame_->linesize,
                             0, vDecodecCtx_->height,
                             vSwsoutFrame_->data, vSwsoutFrame_->linesize);
+            // 如果视频的时间大于音频时间，则暂停视频
+            while(vTimes_ > aTimes_){
+                std::cout<<"lym vTimes_ = "<< vTimes_ << " aTimes_ = " << aTimes_<<std::endl;
+                //延迟下
+                 SDL_Delay(5);
+                 // 停止后，这里有可能 线程复活后获取数据
+                 if(state_ == Stopped){
+                    vCanFree_ = true;
+                    return;
+                 }
+            }
+
 
 
            uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);

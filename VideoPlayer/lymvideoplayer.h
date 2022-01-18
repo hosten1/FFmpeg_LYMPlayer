@@ -83,7 +83,9 @@ private:
     int aSwrBufferIdx_ = 0,aSwrBUfferSize_ = 0;
     int volumn_ = 100;
     bool isMute_ = false;
-     bool aCanFree_ = false;
+    bool aCanFree_ = false;
+    /**音频时钟*/
+    double aTimes_ = 0.0f;
 
     int setupAudio(void);
     //初始重采样
@@ -108,7 +110,8 @@ private:
     std::unique_ptr<LYMCodationLock> vCondLock_;
      DecodeVideoSpec vOutSpec_;
      bool vCanFree_ = false;
-
+     /**音频时钟 当前视频包对应的时间*/
+     double vTimes_ = 0.0f;
 
     int setupVideo(void);
     void addVideoPkt(AVPacket pkt);

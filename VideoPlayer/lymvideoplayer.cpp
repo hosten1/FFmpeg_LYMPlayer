@@ -4,6 +4,8 @@
 #include <iostream>
 
 
+static int const KMaxVideoPktSize = 500;
+static int const KMaxAudioPktSize = 1000;
 
 
 #define LYM_ERROR_BUFF(ret) \
@@ -127,9 +129,11 @@ void LYMVideoPlayer::readFile(){
     while (true) {
         //如果已经停止播放了 这里就不去获取数据
         if(state_ == Stopped)break;
-        if(vPackets_->size()  >= 500 || aPackets_->size() >= 1000){
+        //限制数据大小 防止过大文件占用内存
+        if(vPackets_->size()  >= KMaxVideoPktSize || aPackets_->size() >= KMaxAudioPktSize){
             SDL_Delay(10);
             continue;
+            std::cout<< "lym read packet full vPackets_size =  " << vPackets_->size() << " aPackets_size ="<<  aPackets_->size() << std::endl;
         }
         AVPacket pkt;
         ret = av_read_frame(formatcontext_, &pkt);

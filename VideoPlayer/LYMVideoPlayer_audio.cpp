@@ -211,6 +211,11 @@ int LYMVideoPlayer::decodeAudioData(){
     aCondLock_->unlock();
     char errbuf[1024] = "";
     int ret = avcodec_send_packet(aDecodecCtx_, &pkt);
+    if(pkt.pts != AV_NOPTS_VALUE){
+        //计算当前时间
+        aTimes_ = av_q2d(aStream_->time_base) * pkt.pts;
+    }
+
     //释放内部的数据
     av_packet_unref(&pkt);
     if (ret < 0) {
