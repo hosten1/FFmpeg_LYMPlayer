@@ -53,7 +53,8 @@ int LYMVideoPlayer::initVideoSws(){
     vOutSpec_.width  = inWidth  >> 4 << 4;
     vOutSpec_.height = inHeight >> 4 << 4;
     vOutSpec_.fmt = AV_PIX_FMT_RGB24;
-
+    int imageSize = av_image_get_buffer_size(vOutSpec_.fmt, vOutSpec_.width, vOutSpec_.height, 1);
+     vOutSpec_.imageSize = imageSize;
 // 初始化 视频转换上下文
     vSwsCtx_ = sws_getContext(inWidth,inHeight, vDecodecCtx_->pix_fmt,
                               vOutSpec_.width, vOutSpec_.height, vOutSpec_.fmt,
@@ -135,9 +136,12 @@ void LYMVideoPlayer::decodeVideoData(){
             ret = sws_scale(vSwsCtx_, vSwsInFrame_->data, vSwsInFrame_->linesize,
                             0, vDecodecCtx_->height,
                             vSwsoutFrame_->data, vSwsoutFrame_->linesize);
-            int imageSize = av_image_get_buffer_size(vOutSpec_.fmt, vOutSpec_.width, vOutSpec_.height, 1);
 
-            emit frameDecode(this,vSwsoutFrame_->data[0],imageSize,vOutSpec_);
+
+           uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);
+           memcpy(data,vSwsoutFrame_->data[0],vOutSpec_.imageSize);
+
+            emit frameDecode(this,data,vOutSpec_);
 
         }
     }

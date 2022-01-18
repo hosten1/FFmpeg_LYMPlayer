@@ -23,7 +23,7 @@ void videoRenderWidget::onPlayerStateChanged(LYMVideoPlayer *videoPlayer){
      update();
 
 }
-void videoRenderWidget::onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,LYMVideoPlayer::DecodeVideoSpec &videoSpec){
+void videoRenderWidget::onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data ,LYMVideoPlayer::DecodeVideoSpec &videoSpec){
 
     freeImg();
     if(data != nullptr){
@@ -55,12 +55,13 @@ void videoRenderWidget::onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data
 
 
 
-//   std::cout<< "sws_scale(): " << &(data) << "  imageSize ="<<dataLen
+//   std::cout<< "onPlayerFrameDecode(): " << &(data) << "  imageSize ="<<videoSpec.imageSize
 //            << "  videoSpec.width =" <<videoSpec.width
 //            <<"  videoSpec.width =" <<videoSpec.height<<std::endl;
 }
 void videoRenderWidget::freeImg(){
     if(img_){
+        av_free(img_->bits());
         delete  img_;
         img_ = nullptr;
     }

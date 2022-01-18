@@ -38,6 +38,7 @@ public:
         int width = 0;
         int height = 0;
         AVPixelFormat fmt= AV_PIX_FMT_YUV420P;
+        int imageSize = 0;
     }DecodeVideoSpec;
     typedef enum LYMVolumnRange {
           Min = 0,
@@ -64,7 +65,7 @@ public:
 signals:
     void statsChanged(LYMVideoPlayer *player);
     void playerFailed(LYMVideoPlayer *player);
-    void frameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,DecodeVideoSpec &videoSpec);
+    void frameDecode(LYMVideoPlayer *player,uint8_t *data,DecodeVideoSpec &videoSpec);
 private:
     /**音频属性和方法**/
     AVCodecContext *aDecodecCtx_;
