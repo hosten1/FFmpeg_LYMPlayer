@@ -164,7 +164,10 @@ void LYMVideoPlayer::sdlAudioDataCB(Uint8 *stream, int len){
     // 清空stream  也就是静音
      SDL_memset(stream, 0, len);
     while (len > 0) {
-        if(state_ == Stopped)break;
+        if(state_ == Stopped){
+            aCanFree_ = true;
+            break;
+        }
         if(aSwrBufferIdx_ >= aSwrBUfferSize_){
             //解码音频数据
             aSwrBUfferSize_= decodeAudioData();
@@ -267,6 +270,7 @@ int LYMVideoPlayer::decodeAudioData(){
 
 
 void LYMVideoPlayer::freeAudioSource(){
+    std::cout << __func__ <<"开始释放音频资源 》》》》》》》 " << std::endl;
     aSwrBufferIdx_ = 0;
     aSwrBUfferSize_ = 0;
     aStream_ = nullptr;
@@ -280,6 +284,8 @@ void LYMVideoPlayer::freeAudioSource(){
     av_frame_free(&aSwrInFrame_);
      SDL_PauseAudio(0);
      SDL_CloseAudio();
+     aCanFree_ = false;
+      std::cout << __func__ <<"释放音频资源完成 《《《《《 " << std::endl;
 }
 
 

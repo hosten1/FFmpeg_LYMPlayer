@@ -82,6 +82,7 @@ private:
     int aSwrBufferIdx_ = 0,aSwrBUfferSize_ = 0;
     int volumn_ = 100;
     bool isMute_ = false;
+     bool aCanFree_ = false;
 
     int setupAudio(void);
     //初始重采样
@@ -105,7 +106,7 @@ private:
     std::unique_ptr<std::list<AVPacket>> vPackets_;
     std::unique_ptr<LYMCodationLock> vCondLock_;
      DecodeVideoSpec vOutSpec_;
-
+     bool vCanFree_ = false;
 
 
     int setupVideo(void);
@@ -116,10 +117,11 @@ private:
     void freeVideoSource();
     void decodeVideoData();
 
+
     /**当前状态**/
     PlayState state_ = Stopped;
     char fileName_[512];
-
+    bool fmtCtxCanFree_ = false;
     AVFormatContext *formatcontext_;
 
     std::function<void (LYMVideoPlayer *player)> initFinish_ = nullptr;

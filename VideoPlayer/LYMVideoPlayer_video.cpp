@@ -99,7 +99,10 @@ int LYMVideoPlayer::initVideoSDL(){
 }
 void LYMVideoPlayer::decodeVideoData(){
     while (true) {
-        if(state_ == Stopped)break;
+        if(state_ == Stopped){
+           vCanFree_ = true;
+            break;
+        }
         vCondLock_->lock();
         if(vPackets_->empty()){
             vCondLock_->unlock();
@@ -142,6 +145,7 @@ void LYMVideoPlayer::decodeVideoData(){
 
 }
 void LYMVideoPlayer::freeVideoSource(){
+    std::cout << __func__ <<"开始释放视频资源 》》》》》》》 " << std::endl;
     clearVideoPkts();
     vStream_ = nullptr;
     if(vSwsoutFrame_){
@@ -152,4 +156,6 @@ void LYMVideoPlayer::freeVideoSource(){
     avcodec_free_context(&vDecodecCtx_);
     sws_freeContext(vSwsCtx_);
     vSwsCtx_ = nullptr;
+    vCanFree_ = false;
+     std::cout << __func__ <<"释放视频资源完成 《《《《《 " << std::endl;
 }

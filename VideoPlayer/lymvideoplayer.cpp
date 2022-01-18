@@ -28,6 +28,8 @@
 
 LYMVideoPlayer::LYMVideoPlayer(QObject *parent) : QObject(parent)
 {
+
+//    av_log_set_level(AV_LOG_DEBUG);
     if(SDL_Init(SDL_INIT_AUDIO) != 0){
         std::cout  <<"SDL_Init failed！！！！" << SDL_GetError()<< std::endl;
     }
@@ -65,11 +67,7 @@ void LYMVideoPlayer::stop(){
     //
     SetState(Stopped);
     //释放资源
-    std::thread([this](){
-        SDL_Delay(100);
-        freeSouce();
-    }).detach();
-//    freeSouce();
+   freeSouce();
 }
 
 int64_t LYMVideoPlayer::getDuration(){
@@ -156,6 +154,7 @@ void LYMVideoPlayer::readFile(){
 
 
     }
+    fmtCtxCanFree_ = true;
     std::cout  <<  "VideoPlayVideo end"  << std::endl;
 }
 
@@ -168,7 +167,7 @@ int LYMVideoPlayer::ininDeCodec(AVMediaType type, AVCodecContext **decodecCtx, A
     RRROR_RETRUN(ret,av_find_best_stream);
     *stream = formatcontext_->streams[ret];
     if (!*stream) {
-        av_log(NULL, AV_LOG_DEBUG, "formatcontext_->streams is null");
+        std::cout << "formatcontext_->streams is null"<< std::endl;
         return -1;
     }
     // 第一步 找到解码器 从流中查找
@@ -179,14 +178,14 @@ int LYMVideoPlayer::ininDeCodec(AVMediaType type, AVCodecContext **decodecCtx, A
     //    }
     decodec = avcodec_find_decoder((*stream)->codecpar->codec_id);
     if (!decodec) {
-        av_log(NULL, AV_LOG_DEBUG, "avcodec_find_decoder_by_name error");
+        std::cout << "avcodec_find_decoder_by_name error"<< std::endl;
         return -1;
     }
     //    第三步 通过找到的编码器 创建解码器上下文
     //编码器的上下文
     *decodecCtx = avcodec_alloc_context3(decodec);
     if (!decodecCtx) {
-        av_log(NULL, AV_LOG_DEBUG, "avcodec_alloc_context3 error");
+        std::cout << "avcodec_alloc_context3 error"<< std::endl;
         return -1;
     }
     // 从流中拷贝数据到上下文
@@ -194,21 +193,30 @@ int LYMVideoPlayer::ininDeCodec(AVMediaType type, AVCodecContext **decodecCtx, A
     RRROR_RETRUN(ret,avcodec_parameters_to_context);
     //        第四步 打开编码 器
     ret = avcodec_open2(*decodecCtx, decodec, nullptr);
-    if (ret < 0) {
-        char errbuf[1024] = {0};
-        av_strerror(ret, errbuf, 1024);
-        av_log(nullptr, AV_LOG_DEBUG,"avcodec_open2 ERROR [%d] %s\n",ret,errbuf);
-        return -1;
-    }
+    RRROR_RETRUN(ret,avcodec_open2);
+
     return 0;
 }
 void LYMVideoPlayer::freeSouce(){
+    std::cout << __func__ <<"----开始释放--- " << std::endl;
+    while (aStream_ && !aCanFree_) {
+        SDL_Delay(5);
+    }
+    while (vStream_ && !vCanFree_) {
+       SDL_Delay(5);
+    }
+    while (!fmtCtxCanFree_) {
+       SDL_Delay(5);
+    }
     avformat_close_input(&formatcontext_);
     freeAudioSource();
     freeVideoSource();
+    fmtCtxCanFree_ = false;
+    std::cout << __func__ <<"----释放资源结束---- " << std::endl;
 }
 void LYMVideoPlayer::fataerror(){
-    SetState(Stopped);
-    emit playerFailed(this);
+    state_ = Playing;
     freeSouce();
+    emit playerFailed(this);
+
 }
