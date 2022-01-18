@@ -200,13 +200,16 @@ int LYMVideoPlayer::ininDeCodec(AVMediaType type, AVCodecContext **decodecCtx, A
 void LYMVideoPlayer::freeSouce(){
     std::cout << __func__ <<"----开始释放--- " << std::endl;
     while (aStream_ && !aCanFree_) {
-        SDL_Delay(5);
+        std::cout << __func__ <<"----释放资源等待 aStream_---- " << std::endl;
+        SDL_Delay(10);
     }
     while (vStream_ && !vCanFree_) {
-       SDL_Delay(5);
+        std::cout << __func__ <<"----释放资源等待 vStream_---- " << std::endl;
+       SDL_Delay(10);
     }
     while (!fmtCtxCanFree_) {
-       SDL_Delay(5);
+        std::cout << __func__ <<"----释放资源等待 fmtCtxCanFree_----  " << std::endl;
+       SDL_Delay(10);
     }
     avformat_close_input(&formatcontext_);
     freeAudioSource();

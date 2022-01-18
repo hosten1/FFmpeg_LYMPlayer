@@ -55,9 +55,9 @@ void videoRenderWidget::onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data
 
 
 
-   std::cout<< "sws_scale(): " << &(data) << "  imageSize ="<<dataLen
-            << "  videoSpec.width =" <<videoSpec.width
-            <<"  videoSpec.width =" <<videoSpec.height<<std::endl;
+//   std::cout<< "sws_scale(): " << &(data) << "  imageSize ="<<dataLen
+//            << "  videoSpec.width =" <<videoSpec.width
+//            <<"  videoSpec.width =" <<videoSpec.height<<std::endl;
 }
 void videoRenderWidget::freeImg(){
     if(img_){

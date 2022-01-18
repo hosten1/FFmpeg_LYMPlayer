@@ -136,7 +136,6 @@ void LYMVideoPlayer::decodeVideoData(){
                             0, vDecodecCtx_->height,
                             vSwsoutFrame_->data, vSwsoutFrame_->linesize);
             int imageSize = av_image_get_buffer_size(vOutSpec_.fmt, vOutSpec_.width, vOutSpec_.height, 1);
-//            std::cout<< "sws_scale(): " << &(vSwsoutFrame_->data[0]) << "  ret ="<<ret << "  imageSize ="<<imageSize<<std::endl;
 
             emit frameDecode(this,vSwsoutFrame_->data[0],imageSize,vOutSpec_);
 
