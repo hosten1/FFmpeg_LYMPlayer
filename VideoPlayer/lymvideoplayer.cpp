@@ -51,7 +51,7 @@ void LYMVideoPlayer::play(){
         }).detach();//读取完文件释放线程
     }
 
-    SetState(Playing);
+
 }
 void LYMVideoPlayer::pause(){
     if(state_ != Playing)return;
@@ -65,7 +65,11 @@ void LYMVideoPlayer::stop(){
     //
     SetState(Stopped);
     //释放资源
-    freeSouce();
+    std::thread([this](){
+        SDL_Delay(100);
+        freeSouce();
+    }).detach();
+//    freeSouce();
 }
 
 int64_t LYMVideoPlayer::getDuration(){
@@ -110,6 +114,7 @@ void LYMVideoPlayer::readFile(){
     //打印流信息到控制台
     av_dump_format(formatcontext_, 0, fileName_, 0);
     fflush(stderr);
+    SetState(Playing);
     bool hasAudio = setupAudio() >= 0;
     bool hasVodeo  = setupVideo() >= 0;
     if(!hasAudio && !hasVodeo){
@@ -120,9 +125,14 @@ void LYMVideoPlayer::readFile(){
     // 这里初始化完毕
     if(initFinish_)initFinish_(this);
 
+
     while (true) {
         //如果已经停止播放了 这里就不去获取数据
         if(state_ == Stopped)break;
+        if(vPackets_->size()  >= 500 || aPackets_->size() >= 1000){
+            SDL_Delay(10);
+            continue;
+        }
         AVPacket pkt;
         ret = av_read_frame(formatcontext_, &pkt);
         if(ret == 0){
@@ -130,6 +140,8 @@ void LYMVideoPlayer::readFile(){
                 addAudioPkt(pkt);
             }else if (pkt.stream_index == vStream_->index){
                 addVideoPkt(pkt);
+            }else{
+                av_packet_unref(&pkt);
             }
         }else if(ret == AVERROR_EOF){
             //读取到文件末尾了  直接退出循环

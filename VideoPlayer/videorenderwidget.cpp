@@ -10,22 +10,22 @@ videoRenderWidget::videoRenderWidget(QWidget *parent) : QWidget(parent)
     qDebug() << ":videoRenderWidget(QWidget *parent)";
 }
 videoRenderWidget::~videoRenderWidget(){
-    if(img_){
-        delete  img_;
-        img_ = nullptr;
-    }
+   freeImg();
 }
 void videoRenderWidget::paintEvent(QPaintEvent *event){
     if(img_ == nullptr)return;
 
     QPainter(this).drawImage(rect_,*img_);
 }
+void videoRenderWidget::onPlayerStateChanged(LYMVideoPlayer *videoPlayer){
+     if(videoPlayer->getState() != LYMVideoPlayer::Stopped)return;
+     freeImg();
+     update();
+
+}
 void videoRenderWidget::onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,LYMVideoPlayer::DecodeVideoSpec &videoSpec){
 
-    if(img_){
-        delete  img_;
-        img_ = nullptr;
-    }
+    freeImg();
     if(data != nullptr){
         img_ = new QImage((uchar*)data,videoSpec.width,videoSpec.height,QImage::Format_RGB888);
         //计算视频画面的尺寸
@@ -55,7 +55,13 @@ void videoRenderWidget::onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data
 
 
 
-//   std::cout<< "sws_scale(): " << &(data) << "  imageSize ="<<dataLen
-//            << "  videoSpec.width =" <<videoSpec.width
-//            <<"  videoSpec.width =" <<videoSpec.height<<std::endl;
+   std::cout<< "sws_scale(): " << &(data) << "  imageSize ="<<dataLen
+            << "  videoSpec.width =" <<videoSpec.width
+            <<"  videoSpec.width =" <<videoSpec.height<<std::endl;
+}
+void videoRenderWidget::freeImg(){
+    if(img_){
+        delete  img_;
+        img_ = nullptr;
+    }
 }

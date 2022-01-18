@@ -16,12 +16,13 @@ public:
     ~videoRenderWidget();
 public slots:
     void onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data,int dataLen ,LYMVideoPlayer::DecodeVideoSpec &videoSpec);
+    void onPlayerStateChanged(LYMVideoPlayer *videoPlayer);
 private:
     QImage *img_ = nullptr;
     QRect rect_;
 
   void paintEvent(QPaintEvent *event) override;
-
+  void freeImg();
 signals:
 
 };

@@ -269,6 +269,7 @@ int LYMVideoPlayer::decodeAudioData(){
 void LYMVideoPlayer::freeAudioSource(){
     aSwrBufferIdx_ = 0;
     aSwrBUfferSize_ = 0;
+    aStream_ = nullptr;
     clearAudioPkts();
     avcodec_free_context(&aDecodecCtx_);
     swr_free(&swrContext_);

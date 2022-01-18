@@ -27,6 +27,8 @@ MainWindow::MainWindow(QWidget *parent)
             this,&MainWindow::onPlayerStateFailed);
     connect(player_.get(),&LYMVideoPlayer::frameDecode,
             ui->videoWidget,&videoRenderWidget::onPlayerFrameDecode);
+    connect(player_.get(),&LYMVideoPlayer::statsChanged,
+             ui->videoWidget,&videoRenderWidget::onPlayerStateChanged);
     player_->onInitFinish([this](LYMVideoPlayer *player){
         int64_t micseconds =  player->getDuration();
         ui->currentSlider->setRange(0,micseconds);

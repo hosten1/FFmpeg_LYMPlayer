@@ -59,6 +59,7 @@ int LYMVideoPlayer::initVideoSws(){
                               vOutSpec_.width, vOutSpec_.height, vOutSpec_.fmt,
                               SWS_BILINEAR, nullptr,nullptr, nullptr);
     if(!vSwsCtx_){
+        std::cout  << "sws_getContext Error " << std::endl;
         return -1;
     }
 
@@ -98,6 +99,7 @@ int LYMVideoPlayer::initVideoSDL(){
 }
 void LYMVideoPlayer::decodeVideoData(){
     while (true) {
+        if(state_ == Stopped)break;
         vCondLock_->lock();
         if(vPackets_->empty()){
             vCondLock_->unlock();
@@ -141,11 +143,13 @@ void LYMVideoPlayer::decodeVideoData(){
 }
 void LYMVideoPlayer::freeVideoSource(){
     clearVideoPkts();
-    sws_freeContext(vSwsCtx_);
+    vStream_ = nullptr;
     if(vSwsoutFrame_){
         av_freep(&vSwsoutFrame_->data[0]);
         av_frame_free(&vSwsoutFrame_);
     }
     av_frame_free(&vSwsInFrame_);
     avcodec_free_context(&vDecodecCtx_);
+    sws_freeContext(vSwsCtx_);
+    vSwsCtx_ = nullptr;
 }
