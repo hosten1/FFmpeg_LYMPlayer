@@ -50,7 +50,7 @@ public:
     void stop();
     void pause();
     bool isPlaying();
-    // 获取文件时长 返回 微秒
+    // 获取文件时长 返回 秒s
     int64_t getDuration();
     /*当前的播放时刻 s**/
     int GetCurrentTime();

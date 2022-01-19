@@ -75,7 +75,7 @@ void LYMVideoPlayer::stop(){
 }
 
 int64_t LYMVideoPlayer::getDuration(){
-    if(formatcontext_)return formatcontext_->duration;
+    if(formatcontext_)return (formatcontext_->duration) / (1000*1000);
     return 0;
 }
 /*当前的播放时刻 s**/

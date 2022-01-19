@@ -41,7 +41,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 void MainWindow::onInitFinishd(LYMVideoPlayer *player){
-    int64_t micseconds =  player->getDuration() / (1000*1000);
+    int64_t micseconds =  player->getDuration();
     qDebug()<<"onInitFinishd: "<< micseconds;
 
     ui->currentSlider->setRange(0,100);
@@ -92,7 +92,7 @@ void MainWindow::onTimePlayerChanged(LYMVideoPlayer *player,double time){
 
        *  maximum         getDuration
 */
-     double totalTime = (player->getDuration()/(1000*1000)*1.0f);
+     double totalTime = (player->getDuration()*1.0f);
      int currentIdx =  (player->GetCurrentTime()*1.0f / totalTime ) * (ui->currentSlider->maximum()) ;
 //     qDebug()<<"onTimePlayerChanged: " << " totalTime= "<<totalTime
 //            << "scale = "<< (player->GetCurrentTime()*1.0f / totalTime )
