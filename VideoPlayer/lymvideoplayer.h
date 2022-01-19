@@ -52,20 +52,26 @@ public:
     bool isPlaying();
     // 获取文件时长 返回 微秒
     int64_t getDuration();
+    /*当前的播放时刻 s**/
+    int GetCurrentTime();
+    /*设置当前的播放时刻 s**/
+    bool SetCurrentTime(int seekTime);
     /**获取状态**/
     PlayState getState();
     /**设置文件名**/
     void SetFileName(std::string fileNmae);
     //文件初始化完成回调
-    void onInitFinish( std::function<void (LYMVideoPlayer *player)> initFinish);
+//    void onInitFinish( std::function<void (LYMVideoPlayer *player)> initFinish);
     void setVolumn(int volumn);
     int getVolumn();
     void setMute(bool isMute);
     bool isMuteFun();
 signals:
+    void InitFinishd(LYMVideoPlayer *player);
     void statsChanged(LYMVideoPlayer *player);
     void playerFailed(LYMVideoPlayer *player);
     void frameDecode(LYMVideoPlayer *player,uint8_t *data,DecodeVideoSpec &videoSpec);
+    void timePlayerChanged(LYMVideoPlayer *player,double time);
 private:
     /**音频属性和方法**/
     AVCodecContext *aDecodecCtx_;
@@ -84,6 +90,7 @@ private:
     int volumn_ = 100;
     bool isMute_ = false;
     bool aCanFree_ = false;
+     bool hasAudio_ = false;
     /**音频时钟*/
     double aTimes_ = 0.0f;
 
@@ -110,13 +117,13 @@ private:
     std::unique_ptr<LYMCodationLock> vCondLock_;
      DecodeVideoSpec vOutSpec_;
      bool vCanFree_ = false;
+     bool hasVideo_ = false;
      /**音频时钟 当前视频包对应的时间*/
      double vTimes_ = 0.0f;
 
     int setupVideo(void);
     void addVideoPkt(AVPacket pkt);
     void clearVideoPkts();
-    int initVideoSDL();
     int initVideoSws();
     void freeVideoSource();
     void decodeVideoData();
@@ -127,8 +134,10 @@ private:
     char fileName_[512];
     bool fmtCtxCanFree_ = false;
     AVFormatContext *formatcontext_;
+   /**外部设置的事件 用于 seek功能 s*/
+    int seekTime_ = -1;
 
-    std::function<void (LYMVideoPlayer *player)> initFinish_ = nullptr;
+//    std::function<void (LYMVideoPlayer *player)> initFinish_ = nullptr;
 
     /**改变状态*/
     void SetState(PlayState stateT);

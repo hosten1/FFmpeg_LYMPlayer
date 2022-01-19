@@ -36,14 +36,6 @@ int LYMVideoPlayer::setupVideo(void){
 
     ret = initVideoSws();
     RRROR_RETRUN(ret,initVideoSws);
-
-    std::thread([this](){
-        //子线程解码视频
-        decodeVideoData();
-    }).detach();
-    //开启新的线程去解码
-    ret = initVideoSDL();
-    RRROR_RETRUN(ret,initVideoSDL);
     return 0;
 }
 int LYMVideoPlayer::initVideoSws(){
@@ -95,9 +87,6 @@ void LYMVideoPlayer::clearVideoPkts(){
     vPackets_->clear();
     vCondLock_->unlock();
 }
-int LYMVideoPlayer::initVideoSDL(){
-
-}
 void LYMVideoPlayer::decodeVideoData(){
     while (true) {
         if(state_ == Stopped){
@@ -107,6 +96,7 @@ void LYMVideoPlayer::decodeVideoData(){
         vCondLock_->lock();
         if(vPackets_->empty()){
             vCondLock_->unlock();
+            SDL_Delay(2);
             continue;
         }
         // 取出头部的视频包
@@ -118,6 +108,9 @@ void LYMVideoPlayer::decodeVideoData(){
         if(vPkt.dts != AV_NOPTS_VALUE){
             //计算当前时间
             vTimes_ = av_q2d(aStream_->time_base) * vPkt.dts;
+            if(!hasAudio_){
+                emit timePlayerChanged(this,vTimes_);
+            }
         }
         av_packet_unref(&vPkt);
         RRROR_CONTINUE(ret,avcodec_send_packet);
@@ -140,16 +133,27 @@ void LYMVideoPlayer::decodeVideoData(){
                             0, vDecodecCtx_->height,
                             vSwsoutFrame_->data, vSwsoutFrame_->linesize);
             // 如果视频的时间大于音频时间，则暂停视频
-            while(vTimes_ > aTimes_){
-                std::cout<<"lym vTimes_ = "<< vTimes_ << " aTimes_ = " << aTimes_<<std::endl;
-                //延迟下
-                 SDL_Delay(5);
-                 // 停止后，这里有可能 线程复活后获取数据
-                 if(state_ == Stopped){
-                    vCanFree_ = true;
-                    return;
-                 }
+            if(hasAudio_){
+                while(vTimes_ > aTimes_){
+    //                std::cout<<"lym vTimes_ = "<< vTimes_ << " aTimes_ = " << aTimes_<<std::endl;
+                    //延迟下
+                     SDL_Delay(5);
+                     // 停止后，这里有可能 线程复活后获取数据
+                     if(state_ == Stopped){
+                        vCanFree_ = true;
+                        return;
+                     }
+                }
+            }else{
+                // TODO:没有音频的情况
+                SDL_Delay(1000/25.0f);
+                // 停止后，这里有可能 线程复活后获取数据
+                if(state_ == Stopped){
+                   vCanFree_ = true;
+                   return;
+                }
             }
+
 
 
 
@@ -175,5 +179,7 @@ void LYMVideoPlayer::freeVideoSource(){
     sws_freeContext(vSwsCtx_);
     vSwsCtx_ = nullptr;
     vCanFree_ = false;
-     std::cout << __func__ <<"释放视频资源完成 《《《《《 " << std::endl;
+    hasVideo_ = false;
+    vTimes_ = 0.0;
+    std::cout << __func__ <<"释放视频资源完成 《《《《《 " << std::endl;
 }

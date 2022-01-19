@@ -22,6 +22,8 @@ public:
 private slots:
     void onPlayerStateChanged(LYMVideoPlayer *videoPlayer);
      void onPlayerStateFailed(LYMVideoPlayer *videoPlayer);
+     void onTimePlayerChanged(LYMVideoPlayer *player,double time);
+     void onInitFinishd(LYMVideoPlayer *player);
     void on_stopBtn_clicked();
 
     void on_openFileBtn_clicked();

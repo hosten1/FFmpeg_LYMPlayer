@@ -24,7 +24,7 @@ void videoRenderWidget::onPlayerStateChanged(LYMVideoPlayer *videoPlayer){
 
 }
 void videoRenderWidget::onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data ,LYMVideoPlayer::DecodeVideoSpec &videoSpec){
-
+     if(player->getState() == LYMVideoPlayer::Stopped)return;
     freeImg();
     if(data != nullptr){
         img_ = new QImage((uchar*)data,videoSpec.width,videoSpec.height,QImage::Format_RGB888);

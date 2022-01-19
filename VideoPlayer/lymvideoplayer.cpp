@@ -41,6 +41,7 @@ LYMVideoPlayer::LYMVideoPlayer(QObject *parent) : QObject(parent)
     vCondLock_ = std::make_unique<LYMCodationLock>();
 }
 LYMVideoPlayer::~LYMVideoPlayer(){
+    stop();
     // 清除所有初始化的子系统
     SDL_Quit();
 };
@@ -66,15 +67,25 @@ void LYMVideoPlayer::pause(){
 void LYMVideoPlayer::stop(){
     if(state_ == Stopped)return;
     // 状态可能是 正在播放 暂停
-    //
-    SetState(Stopped);
+    state_ = Stopped;
+//    SetState(Stopped);
     //释放资源
    freeSouce();
+    emit statsChanged(this);
 }
 
 int64_t LYMVideoPlayer::getDuration(){
     if(formatcontext_)return formatcontext_->duration;
     return 0;
+}
+/*当前的播放时刻 s**/
+int LYMVideoPlayer::GetCurrentTime(){
+ return ceil(aTimes_);
+}
+/*设置当前的播放时刻 s**/
+bool LYMVideoPlayer::SetCurrentTime(int seekTime){
+  seekTime_ = seekTime;
+  return true;
 }
 bool LYMVideoPlayer::isPlaying(){
     return state_ == Playing;
@@ -88,9 +99,9 @@ void LYMVideoPlayer::SetFileName(std::string fileNmae){
     if(fileNmae.length() < 0)return;
      memcpy(fileName_,fileNmae.c_str(),fileNmae.length()+1);
 }
-void LYMVideoPlayer::onInitFinish(std::function<void (LYMVideoPlayer *)> initFinish){
-    initFinish_ = initFinish;
-}
+//void LYMVideoPlayer::onInitFinish(std::function<void (LYMVideoPlayer *)> initFinish){
+//    initFinish_ = initFinish;
+//}
 #pragma mark --- 私有方法
 // Private Method
 void LYMVideoPlayer::SetState(LYMVideoPlayer::PlayState stateT){
@@ -114,16 +125,23 @@ void LYMVideoPlayer::readFile(){
     //打印流信息到控制台
     av_dump_format(formatcontext_, 0, fileName_, 0);
     fflush(stderr);
-    SetState(Playing);
-    bool hasAudio = setupAudio() >= 0;
-    bool hasVodeo  = setupVideo() >= 0;
-    if(!hasAudio && !hasVodeo){
+    hasAudio_ = setupAudio() >= 0;
+    hasVideo_  = setupVideo() >= 0;
+    if(!hasAudio_ && !hasVideo_){
         RRROR_END(-1,avformat_open_input);
     }
 
 
     // 这里初始化完毕
-    if(initFinish_)initFinish_(this);
+     emit InitFinishd(this);
+     SetState(Playing);
+     // 开始播放 音频
+      SDL_PauseAudio(0);
+     //开启播放状态之后才开启视频解码线程
+    std::thread([this](){
+        //子线程解码视频
+        decodeVideoData();
+    }).detach();
 
 
     while (true) {
@@ -133,7 +151,7 @@ void LYMVideoPlayer::readFile(){
         if(vPackets_->size()  >= KMaxVideoPktSize || aPackets_->size() >= KMaxAudioPktSize){
             SDL_Delay(10);
             continue;
-            std::cout<< "lym read packet full vPackets_size =  " << vPackets_->size() << " aPackets_size ="<<  aPackets_->size() << std::endl;
+//            std::cout<< "lym read packet full vPackets_size =  " << vPackets_->size() << " aPackets_size ="<<  aPackets_->size() << std::endl;
         }
         AVPacket pkt;
         ret = av_read_frame(formatcontext_, &pkt);
@@ -203,11 +221,11 @@ int LYMVideoPlayer::ininDeCodec(AVMediaType type, AVCodecContext **decodecCtx, A
 }
 void LYMVideoPlayer::freeSouce(){
     std::cout << __func__ <<"----开始释放--- " << std::endl;
-    while (aStream_ && !aCanFree_) {
+    while (hasAudio_ && !aCanFree_) {
         std::cout << __func__ <<"----释放资源等待 aStream_---- " << std::endl;
         SDL_Delay(10);
     }
-    while (vStream_ && !vCanFree_) {
+    while (hasVideo_ && !vCanFree_) {
         std::cout << __func__ <<"----释放资源等待 vStream_---- " << std::endl;
        SDL_Delay(10);
     }

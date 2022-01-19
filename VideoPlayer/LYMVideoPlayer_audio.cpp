@@ -130,8 +130,6 @@ int LYMVideoPlayer::initAuidoSDL(){
         SDL_Quit();
         return -1;
     }
-    // 开始播放
-     SDL_PauseAudio(0);
     return 0;
 }
 void LYMVideoPlayer::setVolumn(int volumn){
@@ -214,6 +212,7 @@ int LYMVideoPlayer::decodeAudioData(){
     if(pkt.pts != AV_NOPTS_VALUE){
         //计算当前时间
         aTimes_ = av_q2d(aStream_->time_base) * pkt.pts;
+        emit timePlayerChanged(this,aTimes_);
     }
 
     //释放内部的数据
@@ -290,6 +289,8 @@ void LYMVideoPlayer::freeAudioSource(){
      SDL_PauseAudio(0);
      SDL_CloseAudio();
      aCanFree_ = false;
+     hasAudio_ = false;
+     aTimes_ = 0.0;
       std::cout << __func__ <<"释放音频资源完成 《《《《《 " << std::endl;
 }
 

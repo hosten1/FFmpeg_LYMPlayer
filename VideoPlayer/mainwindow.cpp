@@ -29,24 +29,24 @@ MainWindow::MainWindow(QWidget *parent)
             ui->videoWidget,&videoRenderWidget::onPlayerFrameDecode);
     connect(player_.get(),&LYMVideoPlayer::statsChanged,
              ui->videoWidget,&videoRenderWidget::onPlayerStateChanged);
-    player_->onInitFinish([this](LYMVideoPlayer *player){
-        int64_t micseconds =  player->getDuration();
-        ui->currentSlider->setRange(0,micseconds);
-
-        ui->durationLab->setText(getdurationText(micseconds));
-
-    });
-    //    player_->onPlayFailed([this](LYMVideoPlayer *player){
-    //        player->stop();
-    //        QMessageBox::critical(nullptr,"提示","播放失败！");
-
-    //    });
+    connect(player_.get(),&LYMVideoPlayer::InitFinishd,
+             this,&MainWindow::onInitFinishd);
+    connect(player_.get(),&LYMVideoPlayer::timePlayerChanged,
+             this,&MainWindow::onTimePlayerChanged);
     ui->playStackedWidget->setCurrentWidget(ui->openFIlePage);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+void MainWindow::onInitFinishd(LYMVideoPlayer *player){
+    int64_t micseconds =  player->getDuration() / (1000*1000);
+    qDebug()<<"onInitFinishd: "<< micseconds;
+
+    ui->currentSlider->setRange(0,100);
+
+    ui->durationLab->setText(getdurationText(micseconds));
 }
 void MainWindow::onPlayerStateFailed(LYMVideoPlayer *videoPlayer){
     QMessageBox::critical(nullptr,"提示","播放失败！");
@@ -84,7 +84,24 @@ void MainWindow::onPlayerStateChanged(LYMVideoPlayer * videoPlayer){
         ui->playStackedWidget->setCurrentWidget(ui->videoPlayPage);
     }
 }
+void MainWindow::onTimePlayerChanged(LYMVideoPlayer *player,double time){
+      if(player->GetCurrentTime() == 0) return;
+      /*
+       * currentIdx       GetCurrentTime
+       *  __________   =   _______
 
+       *  maximum         getDuration
+*/
+     double totalTime = (player->getDuration()/(1000*1000)*1.0f);
+     int currentIdx =  (player->GetCurrentTime()*1.0f / totalTime ) * (ui->currentSlider->maximum()) ;
+//     qDebug()<<"onTimePlayerChanged: " << " totalTime= "<<totalTime
+//            << "scale = "<< (player->GetCurrentTime()*1.0f / totalTime )
+//                                        << " currentSlider  "<<ui->currentSlider->maximum()
+//                                        << " currentT " <<currentIdx;
+
+      ui->currentSlider->setValue(currentIdx);
+      ui->currentLab->setText(getdurationText(player->GetCurrentTime()));
+}
 void MainWindow::on_stopBtn_clicked()
 {
     player_->stop();
@@ -143,7 +160,7 @@ void MainWindow::on_volumeSlider_valueChanged(int value)
 }
 
 QString MainWindow::getdurationText(int64_t value){
-    int64_t seconds = value/(1000*1000);
+    int64_t seconds = value;
     int h =  seconds / (60*60);
     int min = (seconds % (60*60))/60;
     int sec = seconds % 60;
