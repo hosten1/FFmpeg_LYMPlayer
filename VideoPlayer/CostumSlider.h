@@ -9,6 +9,7 @@ class CostumSlider : public QSlider
 public:
     explicit CostumSlider(QWidget *parent = nullptr);
 signals:
+    void clickedValueChange(CostumSlider *slider);
 private:
    void mousePressEvent(QMouseEvent *ev) override;
 };

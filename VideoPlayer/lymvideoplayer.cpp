@@ -41,6 +41,7 @@ LYMVideoPlayer::LYMVideoPlayer(QObject *parent) : QObject(parent)
     vCondLock_ = std::make_unique<LYMCodationLock>();
 }
 LYMVideoPlayer::~LYMVideoPlayer(){
+
     stop();
     // 清除所有初始化的子系统
     SDL_Quit();
@@ -68,23 +69,27 @@ void LYMVideoPlayer::stop(){
     if(state_ == Stopped)return;
     // 状态可能是 正在播放 暂停
     state_ = Stopped;
-//    SetState(Stopped);
     //释放资源
-   freeSouce();
+    freeSouce();
     emit statsChanged(this);
 }
 
 int64_t LYMVideoPlayer::getDuration(){
-    if(formatcontext_)return (formatcontext_->duration) / (1000*1000);
-    return 0;
+
+    return (formatcontext_) ? round(formatcontext_->duration * av_q2d(AV_TIME_BASE_Q))  : 0;
 }
 /*当前的播放时刻 s**/
 int LYMVideoPlayer::GetCurrentTime(){
- return ceil(aTimes_);
+ return round(aTimes_);
 }
 /*设置当前的播放时刻 s**/
 bool LYMVideoPlayer::SetCurrentTime(int seekTime){
+    // 防止直接拖动到文件尾部
+  if(seekTime >= GetCurrentTime()){
+      seekTime -= 1;
+  }
   seekTime_ = seekTime;
+//  std::cout << "SetCurrentTime seekTime ="<< seekTime <<std::endl;
   return true;
 }
 bool LYMVideoPlayer::isPlaying(){
@@ -147,6 +152,29 @@ void LYMVideoPlayer::readFile(){
     while (true) {
         //如果已经停止播放了 这里就不去获取数据
         if(state_ == Stopped)break;
+        if(seekTime_ >= 0){
+            int streamIdx = 0;
+            if(hasAudio_){
+                streamIdx = aStream_->index;
+            }else{
+                streamIdx = vStream_->index;
+            }
+            //转成 ffmpeg的时间戳
+            int64_t ts = seekTime_ / av_q2d(formatcontext_->streams[streamIdx]->time_base);
+            ret = av_seek_frame(formatcontext_,streamIdx,ts,AVSEEK_FLAG_BACKWARD);
+            if(ret < 0) {
+                seekTime_ = -1;
+                std::cout << " lym av_seek_frame failed ！！！！" << std::endl;
+                continue;
+
+            }else {
+                seekTime_ = -1;
+                aTimes_ = 0;
+                vTimes_ = 0;
+                clearAudioPkts();
+                clearVideoPkts();
+            }
+        }
         //限制数据大小 防止过大文件占用内存
         if(vPackets_->size()  >= KMaxVideoPktSize || aPackets_->size() >= KMaxAudioPktSize){
             SDL_Delay(10);
@@ -167,7 +195,7 @@ void LYMVideoPlayer::readFile(){
             //读取到文件末尾了  直接退出循环
             LYM_ERROR_BUFF(ret)
             std::cout << "读取到文件末尾了,退出 error：" <<errbuf<< std::endl;
-            break;
+//            break;
         }else{
             LYM_ERROR_BUFF(ret)
             std::cout << "av_read_frame error：" <<errbuf<< std::endl;
@@ -237,6 +265,7 @@ void LYMVideoPlayer::freeSouce(){
     freeAudioSource();
     freeVideoSource();
     fmtCtxCanFree_ = false;
+    seekTime_ = -1;
     std::cout << __func__ <<"----释放资源结束---- " << std::endl;
 }
 void LYMVideoPlayer::fataerror(){

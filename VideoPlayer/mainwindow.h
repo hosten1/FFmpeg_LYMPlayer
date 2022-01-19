@@ -5,7 +5,7 @@
 #include "lymvideoplayer.h"
 
 
-
+class CostumSlider;
 using namespace std;
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -24,6 +24,10 @@ private slots:
      void onPlayerStateFailed(LYMVideoPlayer *videoPlayer);
      void onTimePlayerChanged(LYMVideoPlayer *player,double time);
      void onInitFinishd(LYMVideoPlayer *player);
+     void onSliderClickValueChange(CostumSlider *slider);
+
+
+
     void on_stopBtn_clicked();
 
     void on_openFileBtn_clicked();
@@ -35,10 +39,12 @@ private slots:
     void on_silenceBtn_clicked();
 
     void on_volumeSlider_valueChanged(int value);
-
+protected:
+    void closeEvent(QCloseEvent *event) override;
 private:
     Ui::MainWindow *ui;
     unique_ptr<LYMVideoPlayer> player_;
     QString getdurationText(int64_t value);
+
 };
 #endif // MAINWINDOW_H

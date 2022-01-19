@@ -11,4 +11,5 @@ void CostumSlider::mousePressEvent(QMouseEvent *ev){
    int valueI = QStyle::sliderValueFromPosition(minimum(),maximum(),ev->pos().x(),width());
   setValue(valueI);
     QSlider::mousePressEvent(ev);
+    emit clickedValueChange(this);
 }

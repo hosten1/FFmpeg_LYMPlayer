@@ -33,12 +33,18 @@ MainWindow::MainWindow(QWidget *parent)
              this,&MainWindow::onInitFinishd);
     connect(player_.get(),&LYMVideoPlayer::timePlayerChanged,
              this,&MainWindow::onTimePlayerChanged);
+    connect(ui->currentSlider,&CostumSlider::clickedValueChange,
+             this,&MainWindow::onSliderClickValueChange);
     ui->playStackedWidget->setCurrentWidget(ui->openFIlePage);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+void MainWindow::closeEvent(QCloseEvent *event){
+    player_ -> stop();
+    qDebug()<<"closeEvent ";
 }
 void MainWindow::onInitFinishd(LYMVideoPlayer *player){
     int64_t micseconds =  player->getDuration();
@@ -47,6 +53,19 @@ void MainWindow::onInitFinishd(LYMVideoPlayer *player){
     ui->currentSlider->setRange(0,100);
 
     ui->durationLab->setText(getdurationText(micseconds));
+}
+void MainWindow::onSliderClickValueChange(CostumSlider *slider){
+    if(player_->getState() == LYMVideoPlayer::Stopped)return;
+   if(slider == ui->currentSlider){
+       /*
+        * currentIdx       GetCurrentTime
+        *  __________   =   _______
+
+        *  maximum         getDuration
+ */
+       int currentTimer =  (slider->value() * 1.0f / (ui->currentSlider->maximum() )) *  (player_->getDuration()*1.0f);
+       player_->SetCurrentTime(currentTimer);
+   }
 }
 void MainWindow::onPlayerStateFailed(LYMVideoPlayer *videoPlayer){
     QMessageBox::critical(nullptr,"提示","播放失败！");
@@ -137,8 +156,8 @@ void MainWindow::on_playBtn_clicked()
 
 void MainWindow::on_currentSlider_valueChanged(int value)
 {
-    qDebug()<<"on_currentSlider_valueChanged " << value;
-    ui->currentLab->setText(getdurationText(value));
+//    qDebug()<<"on_currentSlider_valueChanged " << value;
+//    ui->currentLab->setText(getdurationText(value));
 }
 
 void MainWindow::on_silenceBtn_clicked()
