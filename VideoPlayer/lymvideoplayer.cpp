@@ -86,7 +86,7 @@ int LYMVideoPlayer::GetCurrentTime(){
 bool LYMVideoPlayer::SetCurrentTime(int seekTime){
     // 防止直接拖动到文件尾部
   if(seekTime >= GetCurrentTime()){
-      seekTime -= 1;
+      seekTime -= 5;
   }
   seekTime_ = seekTime;
 //  std::cout << "SetCurrentTime seekTime ="<< seekTime <<std::endl;

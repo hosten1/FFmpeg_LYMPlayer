@@ -44,7 +44,7 @@ int LYMVideoPlayer::initVideoSws(){
     //  保证视频是 16的倍数
     vOutSpec_.width  = inWidth  >> 4 << 4;
     vOutSpec_.height = inHeight >> 4 << 4;
-    vOutSpec_.fmt = AV_PIX_FMT_RGB24;
+    vOutSpec_.fmt = AV_PIX_FMT_YUV420P;
     int imageSize = av_image_get_buffer_size(vOutSpec_.fmt, vOutSpec_.width, vOutSpec_.height, 1);
      vOutSpec_.imageSize = imageSize;
 // 初始化 视频转换上下文
@@ -157,8 +157,19 @@ void LYMVideoPlayer::decodeVideoData(){
 
 
 
+
+//           uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);
+//           memcpy(data,vSwsoutFrame_->data[0],vOutSpec_.imageSize);
+
+//           fwrite(frame->data[0], sizeof(uint8_t), frame->linesize[0]*ctx->height,outfile);
+//           fwrite(frame->data[1], sizeof(uint8_t), frame->linesize[1]*ctx->height >> 1,outfile);
+//           fwrite(frame->data[2], sizeof(uint8_t), frame->linesize[2]*ctx->height >> 1,outfile);
            uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);
-           memcpy(data,vSwsoutFrame_->data[0],vOutSpec_.imageSize);
+           size_t videoFirst = vSwsoutFrame_->linesize[0]*vOutSpec_.height;
+           memcpy(data,vSwsoutFrame_->data[0],videoFirst);
+           size_t videoSecond = vSwsoutFrame_->linesize[1]*vOutSpec_.height >> 1;
+           memcpy(data + videoFirst,vSwsoutFrame_->data[1],videoSecond);
+           memcpy(data + videoSecond + videoFirst,vSwsoutFrame_->data[2],vSwsoutFrame_->linesize[2]*vOutSpec_.height >> 1);
 
             emit frameDecode(this,data,vOutSpec_);
 

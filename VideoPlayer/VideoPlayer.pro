@@ -1,6 +1,6 @@
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT += quick widgets opengl
 
 CONFIG += c++11
 
@@ -17,6 +17,7 @@ SOURCES += \
     lymvideoplayer.cpp \
     main.cpp \
     mainwindow.cpp \
+    OpenGLDisplay.cpp\
     videorenderwidget.cpp
 
 HEADERS += \
@@ -24,6 +25,7 @@ HEADERS += \
     lymcodationlock.h \
     lymvideoplayer.h \
     mainwindow.h \
+    OpenGLDisplay.h\
     videorenderwidget.h
 
 FORMS += \
@@ -50,3 +52,11 @@ INCLUDEPATH += $$PWD/include
 DEPENDPATH += $$PWD/include
 INCLUDEPATH += $$PWD/include/SDL2
 DEPENDPATH += $$PWD/include/SDL2
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/../../../../../../usr/local/Cellar/qt/6.2.2/lib/release/ -lQtOpenGLWidgets
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/../../../../../../usr/local/Cellar/qt/6.2.2/lib/debug/ -lQtOpenGLWidgets
+else:mac: LIBS += -F$$PWD/../../../../../../usr/local/Cellar/qt/6.2.2/lib/ -framework QtOpenGLWidgets
+else:unix: LIBS += -L$$PWD/../../../../../../usr/local/Cellar/qt/6.2.2/lib/ -lQtOpenGLWidgets
+
+INCLUDEPATH += $$PWD/../../../../../../usr/local/Cellar/qt/6.2.2/include
+DEPENDPATH += $$PWD/../../../../../../usr/local/Cellar/qt/6.2.2/include

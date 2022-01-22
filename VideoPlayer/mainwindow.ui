@@ -46,7 +46,13 @@
       <widget class="QWidget" name="videoPlayPage">
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
-         <widget class="videoRenderWidget" name="videoWidget" native="true"/>
+         <widget class="videoRenderWidget" name="videoWidget" native="true">
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="0">
+            <widget class="OpenGLDisplay" name="openGLWidget"/>
+           </item>
+          </layout>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -236,7 +242,12 @@
   <customwidget>
    <class>CostumSlider</class>
    <extends>QSlider</extends>
-   <header location="global">costumslider.h</header>
+   <header>costumslider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>OpenGLDisplay</class>
+   <extends>QOpenGLWidget</extends>
+   <header location="global">opengldisplay.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -2,7 +2,6 @@
 #define VIDEORENDERWIDGET_H
 
 #include <QWidget>
-
 #include "lymvideoplayer.h"
 
 class QImage;

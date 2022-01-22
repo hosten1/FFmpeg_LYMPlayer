@@ -5,7 +5,7 @@
 #include <qstring.h>
 #include <QMessageBox>
 #include "videorenderwidget.h"
-
+#include "OpenGLDisplay.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -25,10 +25,14 @@ MainWindow::MainWindow(QWidget *parent)
             this,&MainWindow::onPlayerStateChanged);
     connect(player_.get(),&LYMVideoPlayer::playerFailed,
             this,&MainWindow::onPlayerStateFailed);
+//    connect(player_.get(),&LYMVideoPlayer::frameDecode,
+//            ui->videoWidget,&videoRenderWidget::onPlayerFrameDecode);
+//    connect(player_.get(),&LYMVideoPlayer::statsChanged,
+//             ui->videoWidget,&videoRenderWidget::onPlayerStateChanged);
     connect(player_.get(),&LYMVideoPlayer::frameDecode,
-            ui->videoWidget,&videoRenderWidget::onPlayerFrameDecode);
+            ui->openGLWidget,&OpenGLDisplay::onPlayerFrameDecode);
     connect(player_.get(),&LYMVideoPlayer::statsChanged,
-             ui->videoWidget,&videoRenderWidget::onPlayerStateChanged);
+             ui->openGLWidget,&OpenGLDisplay::onPlayerStateChanged);
     connect(player_.get(),&LYMVideoPlayer::InitFinishd,
              this,&MainWindow::onInitFinishd);
     connect(player_.get(),&LYMVideoPlayer::timePlayerChanged,
