@@ -43,12 +43,13 @@ void OpenGLDisplay::onPlayerStateChanged(LYMVideoPlayer *videoPlayer){
 }
 void OpenGLDisplay::onPlayerFrameDecode(LYMVideoPlayer *player,uint8_t *data ,LYMVideoPlayer::DecodeVideoSpec &videoSpec){
      if(player->getState() == LYMVideoPlayer::Stopped)return;
+     /*std::cout<< "onPlayerFrameDecode(): " << &(data) << "  imageSize ="<<videoSpec.imageSize
+              << "  videoSpec.width =" <<videoSpec.width
+              <<"  videoSpec.width =" <<videoSpec.height<<std::endl;*/
      InitDrawBuffer(videoSpec.imageSize);
      DisplayVideoFrame(data,videoSpec.width,videoSpec.height);
 
-//   std::cout<< "onPlayerFrameDecode(): " << &(data) << "  imageSize ="<<videoSpec.imageSize
-//            << "  videoSpec.width =" <<videoSpec.width
-//            <<"  videoSpec.width =" <<videoSpec.height<<std::endl;
+
 }
 
 /*************************************************************************/
@@ -73,10 +74,14 @@ void OpenGLDisplay::InitDrawBuffer(unsigned bsize)
 
 void OpenGLDisplay::DisplayVideoFrame(unsigned char *data, int frameWidth, int frameHeight)
 {
+
     impl->mVideoW = frameWidth;
     impl->mVideoH = frameHeight;
     memcpy(impl->mBufYuv, data, impl->mFrameSize);
     update();
+    resizeGL(width(),height());
+    av_free(data);
+
 }
 
 void OpenGLDisplay::initializeGL()
@@ -221,7 +226,7 @@ void OpenGLDisplay::initializeGL()
     // Get the texture index value of the returned v component
     impl->id_v = impl->mTextureV->textureId();
 
-    glClearColor (0.3, 0.3, 0.3, 0.0); // set the background color
+    glClearColor (0, 0, 0, 0.0); // set the background color
 //    qDebug("addr=%x id_y = %d id_u=%d id_v=%d\n", this, impl->id_y, impl->id_u, impl->id_v);
 }
 
@@ -229,9 +234,27 @@ void OpenGLDisplay::resizeGL(int w, int h)
 {
     if(h == 0)// prevents being divided by zero
         h = 1;// set the height to 1
+//    int h = height();
+//    int w = width();
+    int dx = 0;
+    int dy = 0;
+    int dw = impl->mVideoW;
+    int dh = impl->mVideoH;
+    // 计算目标尺寸
+    if(dw > w || dh > h){//缩放
+        if(dw * h > w * dh){
+            dh = w *dh / dw;
+            dw = w;
+        }else {
+            dw = h * dw / dh;
+            dh = h;
+        }
 
+    }
+    dx = (w - dw) >> 1;
+    dy = (h - dh) >> 1;
     // Set the viewport
-    glViewport(0, 0, w, h);
+    glViewport(dx, dy, dw, dh);
     update();
 }
 

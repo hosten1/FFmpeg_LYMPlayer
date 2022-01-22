@@ -116,7 +116,7 @@ int LYMVideoPlayer::initAuidoSDL(){
     spec.channels = av_get_channel_layout_nb_channels(aOutSwrSpec_.channalLayout);
     // 音频缓冲区的样本数量（这个值必须是2的幂）
     // 512 * 2 *
-    spec.samples = 1024;
+    spec.samples = 1024*2;
     // 回调
     spec.callback = sdlAudioDataCallBack;
     // 传递给回调的参数
@@ -199,6 +199,8 @@ int LYMVideoPlayer::decodeAudioData(){
     //         aCondLock_->wait();
     //    }
     if (aPackets_->empty() || state_ == Stopped) {
+        std::cout<<"lym decodeAudioData error aPackets_->empty() = "<<  aPackets_->empty() << std::endl;
+
         aCondLock_->unlock();
         return 0;
     }
@@ -213,13 +215,16 @@ int LYMVideoPlayer::decodeAudioData(){
         //计算当前时间
         aTimes_ = av_q2d(aStream_->time_base) * pkt.pts;
         emit timePlayerChanged(this,aTimes_);
+
+    }else{
+        std::cout<<"lym decodeAudioData error = "<< trunc(vTimes_) << " aTimes_ = " << trunc(aTimes_)<<std::endl;
     }
 
     //释放内部的数据
     av_packet_unref(&pkt);
     if (ret < 0) {
         av_strerror(ret, errbuf, 1024);
-        printf("  Error avcodec_send_frame [%d] %s\n",ret,errbuf);
+        std::cout <<"lym Error avcodec_send_frame error  = "<< ret << " errbuf ="<<errbuf << std::endl;
         return -1;
     }
     //获取编码后的音频数据，如果成功，需要重复的去获取，直到失败
@@ -229,7 +234,7 @@ int LYMVideoPlayer::decodeAudioData(){
         return 0;
     }else if(ret < 0){
         av_strerror(ret, errbuf, 1024);
-        printf("  Error encode andio frame [%d] %s\n",ret,errbuf);
+        std::cout <<"lym Error avcodec_send_frame error  = "<< ret << " errbuf ="<<errbuf << std::endl;
         return -1;
     }
 
@@ -246,7 +251,7 @@ int LYMVideoPlayer::decodeAudioData(){
             (int)av_rescale_rnd(aOutSwrSpec_.sampleRate, aSwrInFrame_->nb_samples, aInSwrSpec_.sampleRate, AV_ROUND_UP);
     if (dst_nb_samples <= 0){
         av_strerror(ret, errbuf, 1024);
-        printf("dst av_rescale_rnd error [%d] %s\n",ret,errbuf);
+        std::cout <<"lym Error avcodec_send_frame error  = "<< ret << " errbuf ="<<errbuf << std::endl;
         return -1;
     }
     ret = swr_convert(swrContext_,
@@ -256,7 +261,7 @@ int LYMVideoPlayer::decodeAudioData(){
     if (ret < 0) {
 
         av_strerror(ret, errbuf, 1024);
-        printf(" swr_convert error [%d] %s\n",ret,errbuf);
+        std::cout <<"lym Error avcodec_send_frame error  = "<< ret << " errbuf ="<<errbuf << std::endl;
         //        av_packet_unref(audioPacket);
         return ret;
     }

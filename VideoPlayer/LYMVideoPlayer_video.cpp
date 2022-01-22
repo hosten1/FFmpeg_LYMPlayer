@@ -134,10 +134,21 @@ void LYMVideoPlayer::decodeVideoData(){
                             vSwsoutFrame_->data, vSwsoutFrame_->linesize);
             // 如果视频的时间大于音频时间，则暂停视频
             if(hasAudio_){
-                while(vTimes_ > aTimes_){
-    //                std::cout<<"lym vTimes_ = "<< vTimes_ << " aTimes_ = " << aTimes_<<std::endl;
-                    //延迟下
-                     SDL_Delay(5);
+                while(trunc(vTimes_) > trunc(aTimes_)){
+//                    std::cout<<"lym vTimes_ = "<< trunc(vTimes_) << " aTimes_ = " << trunc(aTimes_)<<std::endl;
+                    //延迟下 按照30fps
+                     SDL_Delay(25);
+//                     if(aPackets_->size() < 300){
+//                         //再延迟下 按照15fps
+//                         SDL_Delay(1000/15);
+//                     }
+                     if(aPackets_->size() < 1){
+                         //再延迟下 按照15fps
+                          std::cout<<"lym 程序播放异常 = "<< trunc(vTimes_) << " aTimes_ = " << trunc(aTimes_)<<std::endl;
+                          SDL_PauseAudio(1);
+                          SDL_CloseAudio();
+                         exit(-1);
+                     }
                      // 停止后，这里有可能 线程复活后获取数据
                      if(state_ == Stopped){
                         vCanFree_ = true;
@@ -154,16 +165,13 @@ void LYMVideoPlayer::decodeVideoData(){
                 }
             }
 
-
-
-
-
 //           uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);
 //           memcpy(data,vSwsoutFrame_->data[0],vOutSpec_.imageSize);
 
 //           fwrite(frame->data[0], sizeof(uint8_t), frame->linesize[0]*ctx->height,outfile);
 //           fwrite(frame->data[1], sizeof(uint8_t), frame->linesize[1]*ctx->height >> 1,outfile);
 //           fwrite(frame->data[2], sizeof(uint8_t), frame->linesize[2]*ctx->height >> 1,outfile);
+           SDL_Delay(1000/5.0f);
            uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);
            size_t videoFirst = vSwsoutFrame_->linesize[0]*vOutSpec_.height;
            memcpy(data,vSwsoutFrame_->data[0],videoFirst);

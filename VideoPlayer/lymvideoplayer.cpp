@@ -4,7 +4,7 @@
 #include <iostream>
 
 
-static int const KMaxVideoPktSize = 500;
+static int const KMaxVideoPktSize = 5000;
 static int const KMaxAudioPktSize = 1000;
 
 
@@ -141,12 +141,13 @@ void LYMVideoPlayer::readFile(){
      emit InitFinishd(this);
      SetState(Playing);
      // 开始播放 音频
-      SDL_PauseAudio(0);
+     SDL_PauseAudio(0);
      //开启播放状态之后才开启视频解码线程
-    std::thread([this](){
+   videoPlayThread_ = std::make_unique<std::thread>([this](){
         //子线程解码视频
         decodeVideoData();
-    }).detach();
+        std::cout << " lym 视频线程结束了。。。 failed ！！！！" << std::endl;
+    });
 
 
     while (true) {
@@ -176,10 +177,14 @@ void LYMVideoPlayer::readFile(){
             }
         }
         //限制数据大小 防止过大文件占用内存
-        if(vPackets_->size()  >= KMaxVideoPktSize || aPackets_->size() >= KMaxAudioPktSize){
-            SDL_Delay(10);
+        if(vPackets_->size()  >= KMaxVideoPktSize || aPackets_->size() >= KMaxAudioPktSize*0.8){
+            SDL_Delay(50);
+             std::cout<< "lym read packet full vPackets_size =  " << vPackets_->size() << " aPackets_size ="<<  aPackets_->size() << std::endl;
             continue;
-//            std::cout<< "lym read packet full vPackets_size =  " << vPackets_->size() << " aPackets_size ="<<  aPackets_->size() << std::endl;
+        }
+        if(aPackets_->size() > 10){
+            // 按照音频10ms 去获取一次数据
+            SDL_Delay(10);
         }
         AVPacket pkt;
         ret = av_read_frame(formatcontext_, &pkt);
@@ -201,6 +206,7 @@ void LYMVideoPlayer::readFile(){
             std::cout << "av_read_frame error：" <<errbuf<< std::endl;
             continue;
         }
+
 
 
     }
@@ -247,7 +253,7 @@ int LYMVideoPlayer::ininDeCodec(AVMediaType type, AVCodecContext **decodecCtx, A
 
     return 0;
 }
-void LYMVideoPlayer::freeSouce(){
+void LYMVideoPlayer::freeSouce(){    
     std::cout << __func__ <<"----开始释放--- " << std::endl;
     while (hasAudio_ && !aCanFree_) {
         std::cout << __func__ <<"----释放资源等待 aStream_---- " << std::endl;
@@ -261,6 +267,8 @@ void LYMVideoPlayer::freeSouce(){
         std::cout << __func__ <<"----释放资源等待 fmtCtxCanFree_----  " << std::endl;
        SDL_Delay(10);
     }
+    videoPlayThread_->detach();
+
     avformat_close_input(&formatcontext_);
     freeAudioSource();
     freeVideoSource();

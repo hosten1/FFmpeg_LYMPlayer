@@ -4,8 +4,9 @@
 #include <QObject>
 #include <list>
 #include <string>
-
+#include <thread>
 #include "lymcodationlock.h"
+
 extern "C" {
     #include "libavutil/avutil.h"
     #include "libavdevice/avdevice.h"
@@ -136,6 +137,8 @@ private:
     AVFormatContext *formatcontext_;
    /**外部设置的事件 用于 seek功能 s*/
     int seekTime_ = -1;
+
+     std::unique_ptr<std::thread>  videoPlayThread_;
 
 //    std::function<void (LYMVideoPlayer *player)> initFinish_ = nullptr;
 
