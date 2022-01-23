@@ -308,7 +308,7 @@ void LYMVideoPlayer::freeAudioSource(){
      hasAudio_ = false;
      aTimes_ = 0.0;
      aSeekTime_ = -1;
-      std::cout << __func__ <<"释放音频资源完成 《《《《《 " << std::endl;
+     std::cout << __func__ <<"释放音频资源完成 《《《《《 " << std::endl;
 }
 
 

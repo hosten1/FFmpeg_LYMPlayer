@@ -107,7 +107,7 @@ void LYMVideoPlayer::decodeVideoData(){
         int ret = avcodec_send_packet(vDecodecCtx_, &vPkt);
         if(vPkt.dts != AV_NOPTS_VALUE){
             //计算当前时间
-            vTimes_ = av_q2d(aStream_->time_base) * vPkt.dts;
+            vTimes_ = av_q2d(vStream_->time_base) * vPkt.dts;
             if(!hasAudio_){
                 emit timePlayerChanged(this,vTimes_);
             }
@@ -127,18 +127,26 @@ void LYMVideoPlayer::decodeVideoData(){
                 std::cout  << "avcodec_receive_frame "<< " Error " << errbuf << std::endl;
                 break;
             }
+            //发现视频时间早于 seektime ,就不进行渲染
+            if(vSeekTime_ >= 0){
+                if( vTimes_ < vSeekTime_){
+                    continue;
+                }else{
+                    vSeekTime_ = -1;
+                }
+            }
 
             //重采样成rgb格式数据
             ret = sws_scale(vSwsCtx_, vSwsInFrame_->data, vSwsInFrame_->linesize,
                             0, vDecodecCtx_->height,
                             vSwsoutFrame_->data, vSwsoutFrame_->linesize);
 
-            double pts =   0.0;
-            if(vSwsInFrame_->pts != AV_NOPTS_VALUE) {
-                pts =   av_q2d(aStream_->time_base) * vSwsInFrame_->pts;
-                } else {
-                  pts = 0.0;
-                }
+//            double pts =   0.0;
+//            if(vSwsInFrame_->pts != AV_NOPTS_VALUE) {
+//                pts =   av_q2d(aStream_->time_base) * vSwsInFrame_->pts;
+//            } else {
+//                pts = 0.0;
+//            }
             // 如果视频的时间大于音频时间，则暂停视频
             if(hasAudio_){
                 while(vTimes_ > aTimes_ && state_ == Playing){

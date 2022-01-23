@@ -169,6 +169,8 @@ void LYMVideoPlayer::readFile(){
                 continue;
 
             }else {
+                aSeekTime_ = seekTime_;
+                vSeekTime_ = seekTime_;
                 seekTime_ = -1;
                 aTimes_ = 0;
                 vTimes_ = 0;
@@ -176,10 +178,12 @@ void LYMVideoPlayer::readFile(){
                 clearVideoPkts();
             }
         }
+        int aPSize =  aPackets_->size();
+        int vPSize = vPackets_->size();
         //限制数据大小 防止过大文件占用内存
-        if(vPackets_->size()  >= KMaxVideoPktSize || aPackets_->size() >= KMaxAudioPktSize*0.9){
+        if( vPSize >= KMaxVideoPktSize || aPSize >= KMaxAudioPktSize*0.9){
             SDL_Delay(5);
-             std::cout<< "lym read packet full vPackets_size =  " << vPackets_->size() << " aPackets_size ="<<  aPackets_->size() << std::endl;
+             std::cout<< "lym read packet full vPackets_size =  " << vPSize << " aPackets_size ="<< aPSize << std::endl;
             continue;
         }
         if(aPackets_->size() > 10){
@@ -198,9 +202,13 @@ void LYMVideoPlayer::readFile(){
             }
         }else if(ret == AVERROR_EOF){
             //读取到文件末尾了  直接退出循环
+
             LYM_ERROR_BUFF(ret)
             std::cout << "读取到文件末尾了,退出 error：" <<errbuf<< std::endl;
-//            break;
+            if(vPSize == 0 && aPSize == 0){
+                fmtCtxCanFree_ = true;
+                break;
+            }
         }else{
             LYM_ERROR_BUFF(ret)
             std::cout << "av_read_frame error：" <<errbuf<< std::endl;
@@ -210,8 +218,13 @@ void LYMVideoPlayer::readFile(){
 
 
     }
-    fmtCtxCanFree_ = true;
+    if(fmtCtxCanFree_){
+        stop();
+    }else{
+        fmtCtxCanFree_ = true;
+    }
     std::cout  <<  "VideoPlayVideo end"  << std::endl;
+
 }
 
 int LYMVideoPlayer::ininDeCodec(AVMediaType type, AVCodecContext **decodecCtx, AVStream **stream){
