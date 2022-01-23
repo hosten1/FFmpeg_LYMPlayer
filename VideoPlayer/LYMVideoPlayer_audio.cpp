@@ -162,6 +162,10 @@ void LYMVideoPlayer::sdlAudioDataCB(Uint8 *stream, int len){
     // 清空stream  也就是静音
      SDL_memset(stream, 0, len);
     while (len > 0) {
+        if(state_ == Paused){
+           //暂停
+            break;
+        }
         if(state_ == Stopped){
             aCanFree_ = true;
             break;
@@ -199,8 +203,8 @@ int LYMVideoPlayer::decodeAudioData(){
     //         aCondLock_->wait();
     //    }
     if (aPackets_->empty() || state_ == Stopped) {
-        std::cout<<"lym decodeAudioData error aPackets_->empty() = "<<  aPackets_->empty() << std::endl;
-
+//        std::cout<<"lym decodeAudioData error aPackets_->empty() = "<<  aPackets_->empty() << std::endl;
+       SDL_Delay(5);
         aCondLock_->unlock();
         return 0;
     }
@@ -209,8 +213,7 @@ int LYMVideoPlayer::decodeAudioData(){
     aPackets_->pop_front();
     //解锁
     aCondLock_->unlock();
-    char errbuf[1024] = "";
-    int ret = avcodec_send_packet(aDecodecCtx_, &pkt);
+
     if(pkt.pts != AV_NOPTS_VALUE){
         //计算当前时间
         aTimes_ = av_q2d(aStream_->time_base) * pkt.pts;
@@ -218,13 +221,6 @@ int LYMVideoPlayer::decodeAudioData(){
 
     }else{
         std::cout<<"lym decodeAudioData error = "<< trunc(vTimes_) << " aTimes_ = " << trunc(aTimes_)<<std::endl;
-    }
-
-
-    if (ret < 0) {
-        av_strerror(ret, errbuf, 1024);
-        std::cout <<"lym Error avcodec_send_frame error  = "<< ret << " errbuf ="<<errbuf << std::endl;
-        return -1;
     }
     //发现视频时间早于 seektime ,就不进行渲染
     if(aSeekTime_ >= 0){
@@ -236,6 +232,8 @@ int LYMVideoPlayer::decodeAudioData(){
             aSeekTime_ = -1;
         }
     }
+    int ret = avcodec_send_packet(aDecodecCtx_, &pkt);
+    RRROR_RETRUN(ret,avcodec_send_packet);
     //获取编码后的音频数据，如果成功，需要重复的去获取，直到失败
     ret =  avcodec_receive_frame( aDecodecCtx_,aSwrInFrame_);
     //释放内部的数据
@@ -243,11 +241,7 @@ int LYMVideoPlayer::decodeAudioData(){
     // 这里说明编码的数据不够
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
         return 0;
-    }else if(ret < 0){
-        av_strerror(ret, errbuf, 1024);
-        std::cout <<"lym Error avcodec_send_frame error  = "<< ret << " errbuf ="<<errbuf << std::endl;
-        return -1;
-    }
+    }else RRROR_RETRUN(ret,avcodec_receive_frame);
 
     // 这里的数据不一定是返回一个，有可能返回多个
     // 返回值大于零 说明给编码器发送数据是成功的
@@ -260,22 +254,12 @@ int LYMVideoPlayer::decodeAudioData(){
     //        //重采样 数据
     int dst_nb_samples =
             (int)av_rescale_rnd(aOutSwrSpec_.sampleRate, aSwrInFrame_->nb_samples, aInSwrSpec_.sampleRate, AV_ROUND_UP);
-    if (dst_nb_samples <= 0){
-        av_strerror(ret, errbuf, 1024);
-        std::cout <<"lym Error avcodec_send_frame error  = "<< ret << " errbuf ="<<errbuf << std::endl;
-        return -1;
-    }
+    RRROR_RETRUN(dst_nb_samples,av_rescale_rnd);
     ret = swr_convert(swrContext_,
                       aOutFrame_->data, dst_nb_samples,
                       (const uint8_t **)aSwrInFrame_->data,aSwrInFrame_->nb_samples
                       );
-    if (ret < 0) {
-
-        av_strerror(ret, errbuf, 1024);
-        std::cout <<"lym Error avcodec_send_frame error  = "<< ret << " errbuf ="<<errbuf << std::endl;
-        //        av_packet_unref(audioPacket);
-        return ret;
-    }
+    RRROR_RETRUN(ret,swr_convert);
     // 以下两种结算方式等价;以FFmpeg的方式结算是兼容planer的格式音频
     int  ret_nb_samples = av_samples_get_buffer_size(nullptr, aOutSwrSpec_.channals, ret, aOutSwrSpec_.fmt, 1);
     // 返回解码的数据的大小

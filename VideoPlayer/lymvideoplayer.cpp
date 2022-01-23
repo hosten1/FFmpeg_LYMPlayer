@@ -56,6 +56,9 @@ void LYMVideoPlayer::play(){
             readFile();
         }).detach();//读取完文件释放线程
     }
+    if(state_ == Paused){
+        SetState(Playing);
+    }
 
 
 }
@@ -153,6 +156,7 @@ void LYMVideoPlayer::readFile(){
     while (true) {
         //如果已经停止播放了 这里就不去获取数据
         if(state_ == Stopped)break;
+        if(state_ == Paused && seekTime_ == -1)break;
         if(seekTime_ >= 0){
             int streamIdx = 0;
             if(hasAudio_){

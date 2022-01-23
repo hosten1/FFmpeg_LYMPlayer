@@ -89,6 +89,11 @@ void LYMVideoPlayer::clearVideoPkts(){
 }
 void LYMVideoPlayer::decodeVideoData(){
     while (true) {
+        if(state_ == Paused && vSeekTime_ == -1){
+           //暂停  等待5ms防止过快执行
+            SDL_Delay(5);
+            continue;
+        }
         if(state_ == Stopped){
             vCanFree_ = true;
             break;
@@ -154,24 +159,13 @@ void LYMVideoPlayer::decodeVideoData(){
 //                                " aTimes_ = " << aTimes_ <<
 //                                " frameCnt_="<< frameCnt_ <<
 //                                " vPts="<< pts <<std::endl;
-//                    //延迟下 按照30fps
-//                    SDL_Delay(5);
-//                    //                     if(aPackets_->size() < 300){
-//                    //                         //再延迟下 按照15fps
-//                    //                         SDL_Delay(1000/15);
-//                    //                     }
-                    if(aPackets_->size() < 1){
-                        //再延迟下 按照15fps
-                        std::cout<<"lym 程序播放异常 = "<< vTimes_ << " aTimes_ = " << aTimes_ <<std::endl;
-                        SDL_PauseAudio(1);
-                        SDL_CloseAudio();
-                        exit(-1);
+//                    //延迟下 按照5ms
+                    SDL_Delay(5);
+                    // 停止后，这里有可能 线程复活后获取数据
+                    if(state_ == Stopped){
+                        vCanFree_ = true;
+                        return;
                     }
-//                    // 停止后，这里有可能 线程复活后获取数据
-//                    if(state_ == Stopped){
-//                        vCanFree_ = true;
-//                        return;
-//                    }
                 }
             }else{
                 // TODO:没有音频的情况
