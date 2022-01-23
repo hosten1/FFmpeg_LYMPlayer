@@ -91,7 +91,7 @@ void LYMVideoPlayer::decodeVideoData(){
     while (true) {
         if(state_ == Paused && vSeekTime_ == -1){
            //暂停  等待5ms防止过快执行
-            std::cout << " lym 暂停 decodeVideoData state_ = " << state_ << " vSeekTime_"  << vSeekTime_ << std::endl;
+//            std::cout << " lym 暂停 decodeVideoData state_ = " << state_ << " vSeekTime_"  << vSeekTime_ << std::endl;
             continue;
         }
         if(state_ == Stopped){
@@ -100,8 +100,9 @@ void LYMVideoPlayer::decodeVideoData(){
         }
         vCondLock_->lock();
         if(vPackets_->empty()){
+            vCondLock_->wait();
+             std::cout << " lym isEmptly decodeVideoData state_ = " << state_ << " vSeekTime_"  << vSeekTime_ << std::endl;
             vCondLock_->unlock();
-            SDL_Delay(2);
             continue;
         }
         // 取出头部的视频包
@@ -134,7 +135,7 @@ void LYMVideoPlayer::decodeVideoData(){
             }
             //发现视频时间早于 seektime ,就不进行渲染
             if(vSeekTime_ >= 0){
-                if( vTimes_ < vSeekTime_){
+                if(state_ == Playing && vTimes_ < vSeekTime_){
                     continue;
                 }else{
                     vSeekTime_ = -1;
