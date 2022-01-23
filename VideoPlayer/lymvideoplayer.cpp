@@ -60,6 +60,8 @@ void LYMVideoPlayer::play(){
         SetState(Playing);
     }
 
+    std::cout  << " 点击了播放 state_ =" << state_ << std::endl;
+
 
 }
 void LYMVideoPlayer::pause(){
@@ -67,6 +69,7 @@ void LYMVideoPlayer::pause(){
     // 状态可能是 正在播放
     //
     SetState(Paused);
+     std::cout  << " 点击了暂停 state_ =" << state_ << std::endl;
 }
 void LYMVideoPlayer::stop(){
     if(state_ == Stopped)return;
@@ -75,6 +78,7 @@ void LYMVideoPlayer::stop(){
     //释放资源
     freeSouce();
     emit statsChanged(this);
+     std::cout  << " 点击了停止 state_ =" << state_ << std::endl;
 }
 
 int64_t LYMVideoPlayer::getDuration(){
@@ -156,7 +160,11 @@ void LYMVideoPlayer::readFile(){
     while (true) {
         //如果已经停止播放了 这里就不去获取数据
         if(state_ == Stopped)break;
-        if(state_ == Paused && seekTime_ == -1)break;
+        if(state_ == Paused && seekTime_ == -1){
+//            std::cout << " lym 暂停 state_ = " << state_ << " seekTime_" <<seekTime_ << std::endl;
+            SDL_Delay(5);
+            continue;
+        }
         if(seekTime_ >= 0){
             int streamIdx = 0;
             if(hasAudio_){
@@ -189,10 +197,6 @@ void LYMVideoPlayer::readFile(){
             SDL_Delay(5);
              std::cout<< "lym read packet full vPackets_size =  " << vPSize << " aPackets_size ="<< aPSize << std::endl;
             continue;
-        }
-        if(aPackets_->size() > 10){
-            // 按照音频10ms 去获取一次数据
-            SDL_Delay(10);
         }
         AVPacket pkt;
         ret = av_read_frame(formatcontext_, &pkt);

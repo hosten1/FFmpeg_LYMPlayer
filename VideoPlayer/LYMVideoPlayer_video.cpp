@@ -91,7 +91,7 @@ void LYMVideoPlayer::decodeVideoData(){
     while (true) {
         if(state_ == Paused && vSeekTime_ == -1){
            //暂停  等待5ms防止过快执行
-            SDL_Delay(5);
+            std::cout << " lym 暂停 decodeVideoData state_ = " << state_ << " vSeekTime_"  << vSeekTime_ << std::endl;
             continue;
         }
         if(state_ == Stopped){
