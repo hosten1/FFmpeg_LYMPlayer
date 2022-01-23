@@ -94,6 +94,7 @@ private:
      bool hasAudio_ = false;
     /**音频时钟*/
     double aTimes_ = 0.0f;
+    double aSeekTime_ = -1;
 
     int setupAudio(void);
     //初始重采样
@@ -121,6 +122,7 @@ private:
      bool hasVideo_ = false;
      /**音频时钟 当前视频包对应的时间*/
      double vTimes_ = 0.0f;
+     double vSeekTime_ = -1;
 
     int setupVideo(void);
     void addVideoPkt(AVPacket pkt);
@@ -137,8 +139,8 @@ private:
     AVFormatContext *formatcontext_;
    /**外部设置的事件 用于 seek功能 s*/
     int seekTime_ = -1;
-
      std::unique_ptr<std::thread>  videoPlayThread_;
+     int64_t frameCnt_ = 0;
 
 //    std::function<void (LYMVideoPlayer *player)> initFinish_ = nullptr;
 

@@ -47,11 +47,7 @@
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
          <widget class="videoRenderWidget" name="videoWidget" native="true">
-          <layout class="QGridLayout" name="gridLayout_2">
-           <item row="0" column="0">
-            <widget class="OpenGLDisplay" name="openGLWidget"/>
-           </item>
-          </layout>
+          <layout class="QGridLayout" name="gridLayout_2"/>
          </widget>
         </item>
        </layout>
@@ -236,18 +232,13 @@
   <customwidget>
    <class>videoRenderWidget</class>
    <extends>QWidget</extends>
-   <header>videorenderwidget.h</header>
+   <header location="global">videorenderwidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>CostumSlider</class>
    <extends>QSlider</extends>
    <header>costumslider.h</header>
-  </customwidget>
-  <customwidget>
-   <class>OpenGLDisplay</class>
-   <extends>QOpenGLWidget</extends>
-   <header location="global">opengldisplay.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

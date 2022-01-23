@@ -44,10 +44,10 @@ int LYMVideoPlayer::initVideoSws(){
     //  保证视频是 16的倍数
     vOutSpec_.width  = inWidth  >> 4 << 4;
     vOutSpec_.height = inHeight >> 4 << 4;
-    vOutSpec_.fmt = AV_PIX_FMT_YUV420P;
+    vOutSpec_.fmt = AV_PIX_FMT_RGB24;
     int imageSize = av_image_get_buffer_size(vOutSpec_.fmt, vOutSpec_.width, vOutSpec_.height, 1);
-     vOutSpec_.imageSize = imageSize;
-// 初始化 视频转换上下文
+    vOutSpec_.imageSize = imageSize;
+    // 初始化 视频转换上下文
     vSwsCtx_ = sws_getContext(inWidth,inHeight, vDecodecCtx_->pix_fmt,
                               vOutSpec_.width, vOutSpec_.height, vOutSpec_.fmt,
                               SWS_BILINEAR, nullptr,nullptr, nullptr);
@@ -90,7 +90,7 @@ void LYMVideoPlayer::clearVideoPkts(){
 void LYMVideoPlayer::decodeVideoData(){
     while (true) {
         if(state_ == Stopped){
-           vCanFree_ = true;
+            vCanFree_ = true;
             break;
         }
         vCondLock_->lock();
@@ -132,54 +132,63 @@ void LYMVideoPlayer::decodeVideoData(){
             ret = sws_scale(vSwsCtx_, vSwsInFrame_->data, vSwsInFrame_->linesize,
                             0, vDecodecCtx_->height,
                             vSwsoutFrame_->data, vSwsoutFrame_->linesize);
+
+            double pts =   0.0;
+            if(vSwsInFrame_->pts != AV_NOPTS_VALUE) {
+                pts =   av_q2d(aStream_->time_base) * vSwsInFrame_->pts;
+                } else {
+                  pts = 0.0;
+                }
             // 如果视频的时间大于音频时间，则暂停视频
             if(hasAudio_){
-                while(trunc(vTimes_) > trunc(aTimes_)){
-//                    std::cout<<"lym vTimes_ = "<< trunc(vTimes_) << " aTimes_ = " << trunc(aTimes_)<<std::endl;
-                    //延迟下 按照30fps
-                     SDL_Delay(25);
-//                     if(aPackets_->size() < 300){
-//                         //再延迟下 按照15fps
-//                         SDL_Delay(1000/15);
-//                     }
-                     if(aPackets_->size() < 1){
-                         //再延迟下 按照15fps
-                          std::cout<<"lym 程序播放异常 = "<< trunc(vTimes_) << " aTimes_ = " << trunc(aTimes_)<<std::endl;
-                          SDL_PauseAudio(1);
-                          SDL_CloseAudio();
-                         exit(-1);
-                     }
-                     // 停止后，这里有可能 线程复活后获取数据
-                     if(state_ == Stopped){
-                        vCanFree_ = true;
-                        return;
-                     }
+                while(vTimes_ > aTimes_ && state_ == Playing){
+//                     std::cout<<"lym vTimes_ = "<< vTimes_ <<
+//                                " aTimes_ = " << aTimes_ <<
+//                                " frameCnt_="<< frameCnt_ <<
+//                                " vPts="<< pts <<std::endl;
+//                    //延迟下 按照30fps
+//                    SDL_Delay(5);
+//                    //                     if(aPackets_->size() < 300){
+//                    //                         //再延迟下 按照15fps
+//                    //                         SDL_Delay(1000/15);
+//                    //                     }
+                    if(aPackets_->size() < 1){
+                        //再延迟下 按照15fps
+                        std::cout<<"lym 程序播放异常 = "<< vTimes_ << " aTimes_ = " << aTimes_ <<std::endl;
+                        SDL_PauseAudio(1);
+                        SDL_CloseAudio();
+                        exit(-1);
+                    }
+//                    // 停止后，这里有可能 线程复活后获取数据
+//                    if(state_ == Stopped){
+//                        vCanFree_ = true;
+//                        return;
+//                    }
                 }
             }else{
                 // TODO:没有音频的情况
                 SDL_Delay(1000/25.0f);
                 // 停止后，这里有可能 线程复活后获取数据
                 if(state_ == Stopped){
-                   vCanFree_ = true;
-                   return;
+                    vCanFree_ = true;
+                    return;
                 }
             }
 
-//           uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);
-//           memcpy(data,vSwsoutFrame_->data[0],vOutSpec_.imageSize);
+            uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);
+            memcpy(data,vSwsoutFrame_->data[0],vOutSpec_.imageSize);
 
-//           fwrite(frame->data[0], sizeof(uint8_t), frame->linesize[0]*ctx->height,outfile);
-//           fwrite(frame->data[1], sizeof(uint8_t), frame->linesize[1]*ctx->height >> 1,outfile);
-//           fwrite(frame->data[2], sizeof(uint8_t), frame->linesize[2]*ctx->height >> 1,outfile);
-           SDL_Delay(1000/5.0f);
-           uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);
-           size_t videoFirst = vSwsoutFrame_->linesize[0]*vOutSpec_.height;
-           memcpy(data,vSwsoutFrame_->data[0],videoFirst);
-           size_t videoSecond = vSwsoutFrame_->linesize[1]*vOutSpec_.height >> 1;
-           memcpy(data + videoFirst,vSwsoutFrame_->data[1],videoSecond);
-           memcpy(data + videoSecond + videoFirst,vSwsoutFrame_->data[2],vSwsoutFrame_->linesize[2]*vOutSpec_.height >> 1);
+            //            uint8_t *data = (uint8_t *)av_malloc(vOutSpec_.imageSize);
+            //            size_t videoFirst = vSwsoutFrame_->linesize[0]*vOutSpec_.height;
+            //            memcpy(data,vSwsoutFrame_->data[0],videoFirst);
+            //            size_t videoSecond = vSwsoutFrame_->linesize[1]*vOutSpec_.height >> 1;
+            //            memcpy(data + videoFirst,vSwsoutFrame_->data[1],videoSecond);
+            //            memcpy(data + videoSecond + videoFirst,vSwsoutFrame_->data[2],vSwsoutFrame_->linesize[2]*vOutSpec_.height >> 1);
 
             emit frameDecode(this,data,vOutSpec_);
+            frameCnt_++;
+            SDL_Delay(10);
+
 
         }
     }
@@ -200,5 +209,6 @@ void LYMVideoPlayer::freeVideoSource(){
     vCanFree_ = false;
     hasVideo_ = false;
     vTimes_ = 0.0;
+    vSeekTime_ = -1;
     std::cout << __func__ <<"释放视频资源完成 《《《《《 " << std::endl;
 }

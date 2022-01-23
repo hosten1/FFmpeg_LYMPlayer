@@ -116,7 +116,7 @@ int LYMVideoPlayer::initAuidoSDL(){
     spec.channels = av_get_channel_layout_nb_channels(aOutSwrSpec_.channalLayout);
     // 音频缓冲区的样本数量（这个值必须是2的幂）
     // 512 * 2 *
-    spec.samples = 1024*2;
+    spec.samples = 1024*4;
     // 回调
     spec.callback = sdlAudioDataCallBack;
     // 传递给回调的参数
@@ -220,15 +220,26 @@ int LYMVideoPlayer::decodeAudioData(){
         std::cout<<"lym decodeAudioData error = "<< trunc(vTimes_) << " aTimes_ = " << trunc(aTimes_)<<std::endl;
     }
 
-    //释放内部的数据
-    av_packet_unref(&pkt);
+
     if (ret < 0) {
         av_strerror(ret, errbuf, 1024);
         std::cout <<"lym Error avcodec_send_frame error  = "<< ret << " errbuf ="<<errbuf << std::endl;
         return -1;
     }
+    //发现视频时间早于 seektime ,就不进行渲染
+    if(aSeekTime_ >= 0){
+        if( aTimes_ < aSeekTime_){
+            //释放内部的数据
+            av_packet_unref(&pkt);
+            return 0;
+        }else{
+            aSeekTime_ = -1;
+        }
+    }
     //获取编码后的音频数据，如果成功，需要重复的去获取，直到失败
     ret =  avcodec_receive_frame( aDecodecCtx_,aSwrInFrame_);
+    //释放内部的数据
+    av_packet_unref(&pkt);
     // 这里说明编码的数据不够
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
         return 0;
@@ -296,6 +307,7 @@ void LYMVideoPlayer::freeAudioSource(){
      aCanFree_ = false;
      hasAudio_ = false;
      aTimes_ = 0.0;
+     aSeekTime_ = -1;
       std::cout << __func__ <<"释放音频资源完成 《《《《《 " << std::endl;
 }
 

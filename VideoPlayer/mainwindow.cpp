@@ -25,14 +25,14 @@ MainWindow::MainWindow(QWidget *parent)
             this,&MainWindow::onPlayerStateChanged);
     connect(player_.get(),&LYMVideoPlayer::playerFailed,
             this,&MainWindow::onPlayerStateFailed);
-//    connect(player_.get(),&LYMVideoPlayer::frameDecode,
-//            ui->videoWidget,&videoRenderWidget::onPlayerFrameDecode);
-//    connect(player_.get(),&LYMVideoPlayer::statsChanged,
-//             ui->videoWidget,&videoRenderWidget::onPlayerStateChanged);
     connect(player_.get(),&LYMVideoPlayer::frameDecode,
-            ui->openGLWidget,&OpenGLDisplay::onPlayerFrameDecode);
+            ui->videoWidget,&videoRenderWidget::onPlayerFrameDecode);
     connect(player_.get(),&LYMVideoPlayer::statsChanged,
-             ui->openGLWidget,&OpenGLDisplay::onPlayerStateChanged);
+             ui->videoWidget,&videoRenderWidget::onPlayerStateChanged);
+//    connect(player_.get(),&LYMVideoPlayer::frameDecode,
+//            ui->openGLWidget,&OpenGLDisplay::onPlayerFrameDecode);
+//    connect(player_.get(),&LYMVideoPlayer::statsChanged,
+//             ui->openGLWidget,&OpenGLDisplay::onPlayerStateChanged);
     connect(player_.get(),&LYMVideoPlayer::InitFinishd,
              this,&MainWindow::onInitFinishd);
     connect(player_.get(),&LYMVideoPlayer::timePlayerChanged,
