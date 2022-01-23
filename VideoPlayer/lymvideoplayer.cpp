@@ -181,20 +181,21 @@ void LYMVideoPlayer::readFile(){
                 continue;
 
             }else {
+                clearAudioPkts();
+                clearVideoPkts();
                 aSeekTime_ = seekTime_;
                 vSeekTime_ = seekTime_;
                 seekTime_ = -1;
                 aTimes_ = 0;
                 vTimes_ = 0;
-                clearAudioPkts();
-                clearVideoPkts();
+               std::cout << " lym av_seek_frame 成功 aSeekTime_ = " <<aSeekTime_ << "aSeekTime_ = " <<aSeekTime_<< std::endl;
             }
         }
         int aPSize =  aPackets_->size();
         int vPSize = vPackets_->size();
         //限制数据大小 防止过大文件占用内存
         if( vPSize >= KMaxVideoPktSize || aPSize >= KMaxAudioPktSize*0.9){
-            SDL_Delay(5);
+            SDL_Delay(10);
              std::cout<< "lym read packet full vPackets_size =  " << vPSize << " aPackets_size ="<< aPSize << std::endl;
             continue;
         }
