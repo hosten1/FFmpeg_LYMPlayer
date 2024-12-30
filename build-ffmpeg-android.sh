@@ -89,10 +89,10 @@ build_armv7_all(){
 
     PREFIX=$WORKSPACE_CURRENT/android/$ANDROID_ABI
     CROSS_PREFIX=$TOOLCHAIN/bin/$CROSS_COMPILE
-    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
-    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
-    # CC=${TOOLCHAIN}/${PLATFORM}-gcc 
-    # CXX=${TOOLCHAIN}/${PLATFORM}-g++ 
+#    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
+#    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
+    CC=${TOOLCHAIN}/bin/${PLATFORM}-gcc 
+    CXX=${TOOLCHAIN}/bin/${PLATFORM}-g++ 
 
     # Directories for external libraries
     X264_PATH=$WORKSPACE_CURRENT/third_party/x264/$ANDROID_ABI
@@ -105,13 +105,29 @@ build_armv7_all(){
     ensure_directory_exists "${X265_PATH}"
     ensure_directory_exists "${FDK_AAC_PATH}"
     ensure_directory_exists "${OPUS_PATH}"
+    
+    sudo chmod -R 777 ${X264_PATH}/
+    sudo chmod -R 777 ${FDK_AAC_PATH}/
+    sudo chmod -R 777 ${FDK_AAC_PATH}/
+    sudo chmod -R 777 ${OPUS_PATH}/
 
     # Main flow
-    build_x264
-    # build_x265
-    # build_fdk_aac
-    # build_freetype
-    # build_opus
+
+	# 输出结果
+	# 查找 .a 文件
+	FOUND=$(find "$X264_PATH" -type f -name "*.a")
+	if [ -n "$FOUND" ]; then
+	    echo "已找到以下静态库文件："
+	    echo "$FOUND"
+	    echo "已经编译完成"
+	else
+	    echo "未找到任何 .a 文件，开始编译X264"
+#    	build_x264
+	fi
+#     build_x265
+#     build_fdk_aac
+#    build_freetype
+     build_opus
     # build_ffmpeg
 }
 build_arm64_all(){
@@ -131,10 +147,10 @@ build_arm64_all(){
     TOOLCHAIN=$NDK_ROOT/toolchains/$ANDROID_EABI/prebuilt/$ANDROID_EABI_SYS
     PREFIX=$WORKSPACE_CURRENT/android/$ANDROID_ABI
     CROSS_PREFIX=$TOOLCHAIN/bin/$CROSS_COMPILE
-    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
-    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
-    # CC=${TOOLCHAIN}/${PLATFORM}-gcc 
-    # CXX=${TOOLCHAIN}/${PLATFORM}-g++ 
+#    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
+#    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
+    CC=${TOOLCHAIN}/bin/${PLATFORM}-gcc 
+    CXX=${TOOLCHAIN}/bin/${PLATFORM}-g++ 
 
     # Directories for external libraries
     X264_PATH=$WORKSPACE_CURRENT/third_party/x264/$ANDROID_ABI
@@ -147,12 +163,30 @@ build_arm64_all(){
     ensure_directory_exists "${X265_PATH}"
     ensure_directory_exists "${FDK_AAC_PATH}"
     ensure_directory_exists "${OPUS_PATH}"
+
+    sudo chmod -R 777 ${X264_PATH}/
+    sudo chmod -R 777 ${FDK_AAC_PATH}/
+    sudo chmod -R 777 ${FDK_AAC_PATH}/
+    sudo chmod -R 777 ${OPUS_PATH}/
+    
     # Main flow
-    build_x264
-    # build_x265
-    # build_fdk_aac
-    # build_freetype
-    # build_opus
+    # 查找 .a 文件
+	FOUND=$(find "$X264_PATH" -type f -name "*.a")
+	
+	# 输出结果
+	if [ -n "$FOUND" ]; then
+	    echo "已找到以下静态库文件："
+	    echo "$FOUND"
+	    echo "已经编译完成"
+	else
+	    echo "未找到任何 .a 文件，开始编译X264"
+#    	build_x264
+	fi
+
+#     build_x265
+#    build_fdk_aac
+#    build_freetype
+    build_opus
     # build_ffmpeg
 }
 
@@ -251,8 +285,8 @@ build_x264() {
 
 build_x265() {
     echo "Building x265 for $ANDROID_ARCH..."
-    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
-    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
+#    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
+#    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
     local x265_dir="x265_git"
 
     # 检查 x265_git 文件夹是否存在
@@ -261,18 +295,44 @@ build_x265() {
     else
         echo "Cloning x265 repository..."
         git clone https://bitbucket.org/multicoreware/x265_git.git
+#		git clone https://github.com/kimsan0622/libx265-android.git
         if [[ $? -ne 0 ]]; then
             echo "Error: Failed to clone x265 repository"
             exit 1
         fi
     fi
-    
-    # 进入 source 目录并开始编译
     cd ${x265_dir}
-    git checkout origin/Release_4.0
-    # cd build/arm-linux/
-    # cmake -DCMAKE_TOOLCHAIN_FILE=crosscompile.cmake \
-    #     -G "Unix Makefiles" ../../source && ccmake ../../source
+    
+#    export ANDROID_API_VERSION=$API # chose android platform version. I recommend a version higher than 21.
+#    export NUMBER_OF_CORES=4 # set the number of cores which you want to use for compile. it depends on CPU of your host computer.
+#    export OUTPUT_PREFIX=$X265_PATH # set the output prefix. default directory is ./build
+#
+#    # 进入 source 目录并开始编译
+
+#    mkdir x265/build/android
+#    cp -rf build_script/* x265/build/android
+#	
+#	
+#	
+#	
+#	pushd x265/build/android/${$ANDROID_ABI} 
+#
+#	cmake ../../../source \
+#	  -DCMAKE_SYSTEM_NAME=Android \
+#	  -DCMAKE_SYSTEM_VERSION=${ANDROID_API_VERSION} \
+#	  -DCMAKE_ANDROID_ARCH_ABI=${$ANDROID_ABI} \
+#	  -DCMAKE_ANDROID_NDK=${NDK_ROOT} \
+#	  -DCMAKE_ANDROID_STL_TYPE=gnustl_static \
+#	  -DENABLE_SHARED=0 \ # add this line.
+#	  -DNEON_ANDROID=1
+#	
+#	sed -i '' 's/-lpthread/-pthread/' CMakeFiles/cli.dir/link.txt
+#	sed -i '' 's/-lpthread/-pthread/' CMakeFiles/x265-shared.dir/link.txt
+#	sed -i '' 's/-lpthread/-pthread/' CMakeFiles/x265-static.dir/link.txt
+#	
+#	make -j${NUMBER_OF_CORES}
+#	make DESTDIR=${OUTPUT_PREFIX}/${$ANDROID_ABI} install
+	
 
     cd source/
     mkdir build 
@@ -284,27 +344,18 @@ build_x265() {
           -DCMAKE_TOOLCHAIN_FILE=${NDK_ROOT}/build/cmake/android.toolchain.cmake \
           -G "Unix Makefiles" \
           -DANDROID_PLATFORM=android-$API \
+          -DCMAKE_SYSTEM_VERSION=${API} \
+          -DCMAKE_SYSTEM_VERSION=${ANDROID_ABI} \
+          -DCMAKE_ANDROID_NDK=${NDK_ROOT} \
           -DANDROID_ABI=$ANDROID_ABI \
           -DCMAKE_SYSTEM_NAME=Android \
           -DENABLE_STATIC=ON \
           -DENABLE_SHARED=OFF \
           -DENABLE_ASSEMBLY=OFF \
-          -DCMAKE_C_COMPILER=${CC} \
-          -DCMAKE_CXX_COMPILER=${CXX} \
+          -DNEON_ANDROID=1 \
           ..
-    # cmake -DCMAKE_TOOLCHAIN_FILE=/Users/luoyongmeng/Documents/lym/ndklib/android-ndk-r17c/build/cmake/android.toolchain.cmake \
-    #       -G "Unix Makefiles" \
-    #       -DCMAKE_MAKE_PROGRAM=$(which make) \
-    #       -DANDROID_PLATFORM=android-$API \
-    #       -DANDROID_ABI=$ANDROID_ABI \
-    #       -DCMAKE_BUILD_TYPE=Release \
-    #       -DENABLE_SHARED=OFF \
-    #       -DENABLE_STATIC=ON \
-    #       -CMAKE_ANDROID_STL_TYPE=c++_static \
-    #       -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
-    #       -DCMAKE_C_COMPILER=/Users/luoyongmeng/Documents/lym/ndklib/android-ndk-r17c/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-gcc \
-    #       -DCMAKE_CXX_COMPILER=/Users/luoyongmeng/Documents/lym/ndklib/android-ndk-r17c/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-g++ \
-    #       ..
+#                    -DCMAKE_C_COMPILER=${CC} \
+#          -DCMAKE_CXX_COMPILER=${CXX} \
 
     make -j$(nproc)
     sudo make install
@@ -329,7 +380,7 @@ build_fdk_aac() {
     tar zxvf ${fdk_aac_tar}
     cd fdk-aac-${fdk_aac_version}
     # mkdir -p build && cd build
-    ./configure --prefix=$(pwd)/install --host=$HOST --enable-static --enable-pic --disable-shared
+    ./configure --prefix=${FDK_AAC_PATH} --host=$HOST --enable-static --enable-pic --disable-shared
     make -j$(nproc)
     make install
     cd $WORKSPACE_CURRENT
@@ -337,9 +388,24 @@ build_fdk_aac() {
 
 build_freetype() {
     echo "Building freetype for $ANDROID_ARCH..."
-    wget -c https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.gz
-    tar zxvf freetype-2.12.1.tar.gz
-    cd freetype-2.12.1
+     local freetype_dir="freetype-2.9"
+    # 检查 freetype 文件夹是否存在
+    if [[ -d ${freetype_dir} ]]; then
+        echo "Directory ${freetype_dir} already exists. Skipping clone."
+    else
+        echo "Cloning x264 repository..."
+        wget -c https://download.savannah.gnu.org/releases/freetype/freetype-${freetype_dir}.tar.gz
+
+        if [[ $? -ne 0 ]]; then
+            echo "Error: Failed to clone x264 repository"
+            exit 1
+        fi
+        tar zxvf ${freetype_dir}.tar.gz
+    fi
+
+    # 进入 freetype 目录
+    cd ${freetype_dir}
+    
     ./configure --prefix=$(pwd)/install --host=$HOST --enable-static --disable-shared
     make -j$(nproc)
     make install
@@ -348,12 +414,95 @@ build_freetype() {
 
 build_opus() {
     echo "Building opus for $ANDROID_ARCH..."
-    git clone --depth 1 https://github.com/xiph/opus.git opus-src
-    cd opus-src
-    ./configure --prefix=$(pwd)/install --host=$HOST --enable-static --disable-shared
+
+   # 定义工具链路径
+    Android_Toolchain=${WORKSPACE_CURRENT}/android_toolchain
+
+    # 检查工具链是否存在
+    if [ ! -d "$Android_Toolchain" ]; then
+        echo "Android toolchain not found. Creating toolchain..."
+        sudo sh ${NDK_ROOT}/build/tools/make-standalone-toolchain.sh \
+            --platform=android-${API} \
+            --install-dir=${Android_Toolchain}
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to create Android toolchain."
+            exit 1
+        fi
+    else
+        echo "Android toolchain already exists. Skipping creation."
+    fi
+
+    # 下载并解压 Opus 源代码（如果未下载）
+    if [ ! -d "opus-1.5.2" ]; then
+        echo "Downloading Opus source..."
+        wget https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz -O opus-1.5.2.tar.gz
+        if [ $? -ne 0 ]; then
+            echo "Error: Failed to download Opus source."
+            exit 1
+        fi
+        tar -xzf opus-1.5.2.tar.gz
+    fi
+
+    # 进入 Opus 源码目录
+    cd opus-1.5.2 || exit
+
+    # 设置环境变量
+    export PATH=${Android_Toolchain}/bin:$PATH
+    export CC=arm-linux-androideabi-gcc
+    export CXX=arm-linux-androideabi-g++
+
+    # 配置并编译 Opus
+    ./configure --prefix=${OPUS_PATH} \
+                --host=${HOST} \
+                --enable-fixed-point \
+                --disable-float-api \
+                CFLAGS="-O3 -mfpu=neon -mfloat-abi=softfp" \
+                HAVE_ARM_NEON_INTR=1
+
+    if [ $? -ne 0 ]; then
+        echo "Error: Configuration failed."
+        exit 1
+    fi
+
     make -j$(nproc)
+    if [ $? -ne 0 ]; then
+        echo "Error: Build failed."
+        exit 1
+    fi
+
     make install
+    if [ $? -ne 0 ]; then
+        echo "Error: Installation failed."
+        exit 1
+    fi
+
+    echo "Opus build and installation completed successfully."
     cd $WORKSPACE_CURRENT
+    
+#    wget https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz
+#    git clone --depth 1 https://github.com/xiph/opus.git opus-src
+#    cd opus-1.5.2
+#    Android_Toolchain=${WORKSPACE_CURRENT}/android_toolchain
+#    sudo sh ${NDK_ROOT}/build/tools/make-standalone-toolchain.sh \
+#        --platform=android-${API} --install-dir=${Android_Toolchain}
+#
+#    #!/bin/sh
+# 
+#	export PATH=${Android_Toolchain}/bin:$PATH
+#	export CC=arm-linux-androideabi-gcc
+#	export CXX=arm-linux-androideabi-g++
+#	 
+#	./configure --prefix=${OPUS_PATH} \
+#			  --host=${HOST} \
+#			  --enable-fixed-point \
+#			  --disable-float-api \
+#			 CFLAGS="-O3 -mfpu=neon -mfloat-abi=softfp" \
+#			 HAVE_ARM_NEON_INTR=1
+##    
+##    ./configure --prefix=$(pwd)/install --host=$HOST --enable-static --disable-shared
+#    make -j$(nproc)
+#    make install
+#    cd $WORKSPACE_CURRENT
 }
 	
 #build_armv7_all
