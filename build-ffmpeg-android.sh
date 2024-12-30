@@ -16,7 +16,7 @@ then
     export ANDROID_EABI_SYS=darwin-x86_64
 elif [ "$OS" == "Linux" ]; then
     echo "Is Linux build..."
-    export NDK_ROOT=/path/to/your/linux/ndk
+    export NDK_ROOT=/home/luoyongmeng/Documents/android-ndk-r17c
     export ANDROID_EABI_SYS=linux-x86_64
 else
     echo "Unsupported operating system: $OS"
@@ -78,8 +78,9 @@ build_armv7_all(){
 
     # HOST=arm-linux-androideabi
     # CROSS_COMPILE=arm-linux-androideabi-
-    HOST=arm-linux-androideabi
-    CROSS_COMPILE=$HOST-
+    HOST=arm-linux
+    PLATFORM=arm-linux-androideabi
+    CROSS_COMPILE="${PLATFORM}-"
     OPENSSL=$WORKSPACE_CURRENT/openssl/$ANDROID_ABI
     # SYSROOT=$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/sysroot
     # TOOLCHAIN=$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64
@@ -88,10 +89,10 @@ build_armv7_all(){
 
     PREFIX=$WORKSPACE_CURRENT/android/$ANDROID_ABI
     CROSS_PREFIX=$TOOLCHAIN/bin/$CROSS_COMPILE
-    CC=$TOOLCHAIN/bin/$HOST$API-clang
-    CXX=$TOOLCHAIN/bin/$HOST$API-clang++
-    # CC=${TOOLCHAIN}/${HOST}-gcc 
-    # CXX=${TOOLCHAIN}/${HOST}-g++ 
+    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
+    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
+    # CC=${TOOLCHAIN}/${PLATFORM}-gcc 
+    # CXX=${TOOLCHAIN}/${PLATFORM}-g++ 
 
     # Directories for external libraries
     X264_PATH=$WORKSPACE_CURRENT/third_party/x264/$ANDROID_ABI
@@ -100,14 +101,14 @@ build_armv7_all(){
     FREETYPE_PATH=$WORKSPACE_CURRENT/third_party/freetype/$ANDROID_ABI
     OPUS_PATH=$WORKSPACE_CURRENT/third_party/opus/$ANDROID_ABI
     
-    ensure_directory_exists ${X264_PATH}
-    ensure_directory_exists ${X265_PATH}
-    ensure_directory_exists ${FDK_AAC_PATH}
-    ensure_directory_exists ${OPUS_PATH}
+    ensure_directory_exists "${X264_PATH}"
+    ensure_directory_exists "${X265_PATH}"
+    ensure_directory_exists "${FDK_AAC_PATH}"
+    ensure_directory_exists "${OPUS_PATH}"
 
     # Main flow
-    # build_x264
-    build_x265
+    build_x264
+    # build_x265
     # build_fdk_aac
     # build_freetype
     # build_opus
@@ -116,23 +117,24 @@ build_armv7_all(){
 build_arm64_all(){
    # arm64-v8a
     ANDROID_ABI=arm64-v8a
-    ANDROID_API=android-$API
+    ANDROID_API=android-${API}
     ANDROID_ARCH=arch-arm64
     ANDROID_EABI=aarch64-linux-android-4.9
 
-    HOST=aarch64-linux-android
-    CROSS_COMPILE=$HOST-
+    HOST=aarch64-linux
+    PLATFORM=aarch64-linux-android
+    CROSS_COMPILE="${PLATFORM}-"
     OPENSSL=$WORKSPACE_CURRENT/openssl/$ANDROID_ABI
     # SYSROOT=$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/sysroot
     # TOOLCHAIN=$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64
     SYSROOT=$NDK_ROOT/platforms/$ANDROID_API/$ANDROID_ARCH
-    TOOLCHAIN=$NDK_ROOT/toolchains/$ANDROID_EABI/prebuilt/$ANDROID_EABI_SYS/bin
+    TOOLCHAIN=$NDK_ROOT/toolchains/$ANDROID_EABI/prebuilt/$ANDROID_EABI_SYS
     PREFIX=$WORKSPACE_CURRENT/android/$ANDROID_ABI
-    CROSS_PREFIX=$TOOLCHAIN/$CROSS_COMPILE
-    CC=$TOOLCHAIN/bin/$HOST$API-clang
-    CXX=$TOOLCHAIN/bin/$HOST$API-clang++
-    # CC=${TOOLCHAIN}/${HOST}-gcc 
-    # CXX=${TOOLCHAIN}/${HOST}-g++ 
+    CROSS_PREFIX=$TOOLCHAIN/bin/$CROSS_COMPILE
+    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
+    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
+    # CC=${TOOLCHAIN}/${PLATFORM}-gcc 
+    # CXX=${TOOLCHAIN}/${PLATFORM}-g++ 
 
     # Directories for external libraries
     X264_PATH=$WORKSPACE_CURRENT/third_party/x264/$ANDROID_ABI
@@ -141,13 +143,13 @@ build_arm64_all(){
     FREETYPE_PATH=$WORKSPACE_CURRENT/third_party/freetype/$ANDROID_ABI
     OPUS_PATH=$WORKSPACE_CURRENT/third_party/opus/$ANDROID_ABI
 
-    ensure_directory_exists ${X264_PATH}
-    ensure_directory_exists ${X265_PATH}
-    ensure_directory_exists ${FDK_AAC_PATH}
-    ensure_directory_exists ${OPUS_PATH}
+    ensure_directory_exists "${X264_PATH}"
+    ensure_directory_exists "${X265_PATH}"
+    ensure_directory_exists "${FDK_AAC_PATH}"
+    ensure_directory_exists "${OPUS_PATH}"
     # Main flow
-    # build_x264
-    build_x265
+    build_x264
+    # build_x265
     # build_fdk_aac
     # build_freetype
     # build_opus
@@ -203,9 +205,10 @@ build_ffmpeg() {
 
 # Build external libraries
 build_x264() {
+# 在脚本中开启错误退出模式
+    set -e
     echo "Building x264 for $ANDROID_ARCH..."
-    local x264_dir="x264-src"
-
+    local x264_dir="x264"
     # 检查 x264 文件夹是否存在
     if [[ -d ${x264_dir} ]]; then
         echo "Directory ${x264_dir} already exists. Skipping clone."
@@ -220,28 +223,37 @@ build_x264() {
 
     # 进入 x264 目录
     cd ${x264_dir}
-    echo "Compiling x264 for $ANDROID_ABI "
+    echo "Compiling x264 for currnt_path = $(pwd)  $ANDROID_ABI "
     echo "Installing x264 to: $X264_PATH"
+#    HOST: arm-linux-androideabi 
+#CROSS_PREFIX /home/luoyongmeng/Documents/android-ndk-r17c/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/bin/arm-linux-androideabi- 
+#SYSROOT /home/luoyongmeng/Documents/android-ndk-r17c/platforms/android-24/arch-arm 
+    echo "HOST: ${HOST} "
+    echo "CROSS_PREFIX ${CROSS_PREFIX} "
+    echo "SYSROOT ${SYSROOT} "
+#    PREFIX=$(pwd)/android/$ANDROID_ABI
     ./configure \
-        --prefix=$X264_PATH \
-        --host=$HOST \
+        --prefix=${X264_PATH} \
+        --host=${HOST} \
         --disable-asm \
         --enable-static \
         --enable-pic \
-        --enalbe-neon \
-        --extra-cflags="-fPIE -pie" \
-        --extra-ldflags="-fPIE -pie" \
-        --cross-prefix=$CROSS_PREFIX \
-        --sysroot=$SYSROOT
+        --cross-prefix=${CROSS_PREFIX} \
+        --sysroot=${SYSROOT}
+        
     make clean    
     make -j$(nproc)
     make install
     cd $WORKSPACE_CURRENT
+    # 关闭错误退出模式（可选）
+    set +e
 }
 
 build_x265() {
     echo "Building x265 for $ANDROID_ARCH..."
-     local x265_dir="x265_git"
+    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
+    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
+    local x265_dir="x265_git"
 
     # 检查 x265_git 文件夹是否存在
     if [[ -d ${x265_dir} ]]; then
@@ -267,7 +279,7 @@ build_x265() {
     cd build
     make clean
     rm -rf CMakeCache.txt CMakeFiles
-    echo "Configuring build with CMake...  $(pwd)/install NDK_ROOT：${NDK_ROOT} $ANDROID_ABI"
+    echo "Configuring build with CMake...  $(pwd)/install NDK_ROOT：${NDK_ROOT} $ANDROID_ABI  CXX：${CXX}"
     cmake -DCMAKE_INSTALL_PREFIX=$X265_PATH \
           -DCMAKE_TOOLCHAIN_FILE=${NDK_ROOT}/build/cmake/android.toolchain.cmake \
           -G "Unix Makefiles" \
@@ -344,5 +356,5 @@ build_opus() {
     cd $WORKSPACE_CURRENT
 }
 	
-build_armv7_all
+#build_armv7_all
 build_arm64_all
