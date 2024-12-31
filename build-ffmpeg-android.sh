@@ -108,7 +108,7 @@ build_armv7_all(){
     OPUS_PATH=$WORKSPACE_CURRENT/third_party/opus/$ANDROID_ABI
     OPENSSL_PATH=$WORKSPACE_CURRENT/third_party/ssl/$ANDROID_ABI
 
-     SSL_ANDROID_PLATFROM=android-arm
+#     SSL_ANDROID_PLATFROM=android-arm
     	# GitLqr：高版本 NDK 不再包含 gcc, 因此需要将 NDK 内置的 clang 加到入 PATH 环境变量中
 	export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$ANDROID_EABI_SYS/bin:$PATH
 	# GitLqr：编译 arm64 架构需要用到脚本
@@ -170,7 +170,7 @@ build_armv7_all(){
     	    build_openssl
 	fi
     
-    # build_ffmpeg
+     build_ffmpeg
 }
 build_arm64_all(){
    # arm64-v8a
@@ -203,7 +203,7 @@ build_arm64_all(){
     OPUS_PATH=$WORKSPACE_CURRENT/third_party/opus/$ANDROID_ABI
     OPENSSL_PATH=$WORKSPACE_CURRENT/third_party/ssl/$ANDROID_ABI
 
-     SSL_ANDROID_PLATFROM=android-arm64
+#     SSL_ANDROID_PLATFROM=android-arm64
     	# GitLqr：高版本 NDK 不再包含 gcc, 因此需要将 NDK 内置的 clang 加到入 PATH 环境变量中
 	export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$ANDROID_EABI_SYS/bin:$PATH
 	# GitLqr：编译 arm64 架构需要用到脚本
@@ -274,8 +274,33 @@ build_arm64_all(){
 
 
 build_ffmpeg() {
+    check_ffmpeg_source
     cd $WORKSPACE_CURRENT/"ffmpeg-${FF_VERSION}"
     echo "Building FFmpeg for $ANDROID_ARCH..."
+     # 映射 ANDROID_ARCH 到 FFmpeg 识别的架构
+    case "$ANDROID_ARCH" in
+        arch-arm) ARCH="arm" ;;
+        arch-arm64) ARCH="aarch64" ;;
+        arch-x86) ARCH="x86" ;;
+        arch-x86_64) ARCH="x86_64" ;;
+        *) echo "Error: Unsupported architecture $ANDROID_ARCH"; exit 1 ;;
+    esac
+    local FFMPEG_CFLAGS=""
+		FFMPEG_CFLAGS+=" -I$X264_PATH/include"
+		FFMPEG_CFLAGS+=" -I$X265_PATH/include"
+		FFMPEG_CFLAGS+=" -I$FDK_AAC_PATH/include"
+		FFMPEG_CFLAGS+=" -I$OPUS_PATH/include"
+		FFMPEG_CFLAGS+=" -I$OPENSSL_PATH/include"
+		FFMPEG_CFLAGS+=" -Os -fpic -DBIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD"
+		FFMPEG_CFLAGS+=" -fPIE -pie -DANDROID -mfpu=neon -mfloat-abi=softfp"
+    local FFMPEG_LDFLAGS=""
+		FFMPEG_LDFLAGS+=" -L$X264_PATH/lib"
+		FFMPEG_LDFLAGS+=" -L$X265_PATH/lib"
+		FFMPEG_LDFLAGS+=" -L$FDK_AAC_PATH/lib"
+		FFMPEG_LDFLAGS+=" -L$OPUS_PATH/lib"
+		FFMPEG_LDFLAGS+=" -L$OPENSSL_PATH/lib"
+		FFMPEG_LDFLAGS+=" $ADDI_LDFLAGS"
+    
     ./configure \
         --prefix=$PREFIX \
         --disable-doc \
@@ -285,34 +310,41 @@ build_ffmpeg() {
         --disable-static \
         --disable-x86asm \
         --disable-asm \
-        -disable-postproc \
         --disable-symver \
         --disable-devices \
         --disable-avdevice \
-        --disable-indev=v4l2
+        --disable-indev=v4l2 \
         --enable-gpl \
         --enable-nonfree \
         --enable-small \
         --enable-cross-compile \
-        -–enable-jni \
+        --enable-jni \
         --enable-protocols \
         --cross-prefix=$CROSS_PREFIX \
         --target-os=android \
-        --arch=$ANDROID_ARCH \
+        --arch="$ARCH" \
         --sysroot=$SYSROOT \
-        --extra-cflags="-I$X264_PATH/include -I$X265_PATH/include -I$FDK_AAC_PATH/include -I$FREETYPE_PATH/include -I$OPUS_PATH/include -I$OPENSSL/include -Os -fpic -DBIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD -fPIE -pie -DANDROID -mfpu=neon -mfloat-abi=softfp" \
-        --extra-ldflags="-L$X264_PATH/lib -L$X265_PATH/lib -L$FDK_AAC_PATH/lib -L$FREETYPE_PATH/lib -L$OPUS_PATH/lib -L$OPENSSL/lib $ADDI_LDFLAGS" \
         --enable-libx264 \
         --enable-libx265 \
         --enable-libfdk-aac \
         --enable-libopus \
-        --enable-libfreetype \
-        --enable-openssl
+        --enable-openssl \
+        --extra-cflags="$FFMPEG_CFLAGS" \
+    	   --extra-ldflags="$FFMPEG_LDFLAGS" \
+        --cc=$CC \
+        --cxx=$CXX
+#                --enable-libfreetype \
 
+   if [ $? -ne 0 ]; then
+        echo "Error: Configuration failed."
+        exit 1
+    fi
+    	
     make clean
-    make -j$(nproc)
-    make install
-    echo "FFmpeg build for $ANDROID_ARCH completed!"
+    make -j$(nproc) || { echo "Error: Build failed"; exit 1; }
+    make install || { echo "Error: Installation failed"; exit 1; }
+
+    cd $WORKSPACE_CURRENT || { echo "Error: Failed to return to workspace"; exit 1; }
 }
 
 # Build external libraries
@@ -441,7 +473,8 @@ build_x265() {
 }
 
 build_fdk_aac() {
-     echo "Installing fdk-aac..."
+    echo "Installing fdk-aac..."
+    apt-get install autoconf
     local fdk_aac_version="2.0.3"
     local fdk_aac_tar="fdk-aac-${fdk_aac_version}.tar.gz"
     local fdk_aac_url="https://downloads.sourceforge.net/opencore-amr/${fdk_aac_tar}"
@@ -457,8 +490,19 @@ build_fdk_aac() {
     # 解压并安装
     tar zxvf ${fdk_aac_tar}
     cd fdk-aac-${fdk_aac_version}
+    export CC=$CC \
+    export CXX=$CXX
+	./autogen.sh
+    
     # mkdir -p build && cd build
-    ./configure --prefix=${FDK_AAC_PATH} --host=$HOST --enable-static --enable-pic --disable-shared
+    ./configure --prefix=${FDK_AAC_PATH} \
+    			 --host=$HOST \
+    			 --enable-static \
+    			 --enable-pic \
+    			 --disable-shared \
+    			 --with-aix-soname=-arm
+    
+    make clean			 
     make -j$(nproc)
     make install
     cd $WORKSPACE_CURRENT
@@ -483,8 +527,13 @@ build_freetype() {
 
     # 进入 freetype 目录
     cd ${freetype_dir}
-    
-    ./configure --prefix=$(pwd)/install --host=$HOST --enable-static --disable-shared
+
+    ./configure --prefix=$(pwd)/install \
+                --host=$HOST \
+                --enable-static \
+                --disable-shared \
+                --with-sysroot=$SYSROOT
+               
     make -j$(nproc)
     make install
     cd $WORKSPACE_CURRENT
@@ -558,33 +607,17 @@ build_opus() {
     echo "Opus build and installation completed successfully."
     cd $WORKSPACE_CURRENT
     
-#    wget https://downloads.xiph.org/releases/opus/opus-1.5.2.tar.gz
-#    git clone --depth 1 https://github.com/xiph/opus.git opus-src
-#    cd opus-1.5.2
-#    Android_Toolchain=${WORKSPACE_CURRENT}/android_toolchain
-#    sudo sh ${NDK_ROOT}/build/tools/make-standalone-toolchain.sh \
-#        --platform=android-${API} --install-dir=${Android_Toolchain}
-#
-#    #!/bin/sh
-# 
-#	export PATH=${Android_Toolchain}/bin:$PATH
-#	export CC=arm-linux-androideabi-gcc
-#	export CXX=arm-linux-androideabi-g++
-#	 
-#	./configure --prefix=${OPUS_PATH} \
-#			  --host=${HOST} \
-#			  --enable-fixed-point \
-#			  --disable-float-api \
-#			 CFLAGS="-O3 -mfpu=neon -mfloat-abi=softfp" \
-#			 HAVE_ARM_NEON_INTR=1
-##    
-##    ./configure --prefix=$(pwd)/install --host=$HOST --enable-static --disable-shared
-#    make -j$(nproc)
-#    make install
-#    cd $WORKSPACE_CURRENT
 }
 build_openssl() {
     echo "Installing openssl..."
+     # 映射 ANDROID_ARCH 到 FFmpeg 识别的架构
+    case "$ANDROID_ARCH" in
+        arch-arm) SSL_ANDROID_PLATFROM="android-arm" ;;
+        arch-arm64) SSL_ANDROID_PLATFROM="android-arm64" ;;
+        arch-x86) SSL_ANDROID_PLATFROM="android-x86" ;;
+        arch-x86_64) SSL_ANDROID_PLATFROM="android-x86_64" ;;
+        *) echo "Error: Unsupported architecture $ANDROID_ARCH"; exit 1 ;;
+    esac
     # 定义必要的变量
     OPENSSL_VERSION="1.1.1k"
     OPENSSL_TAR="openssl-${OPENSSL_VERSION}.tar.gz"
