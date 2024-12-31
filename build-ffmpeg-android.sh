@@ -146,18 +146,18 @@ build_armv7_all(){
 	    echo "$FOUND"
 	    echo "$FDK_AAC_PATH 已经编译完成"
 	else
-	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译X264"
+	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译FDK_AAC"
     	    build_fdk_aac
 	fi
 
 #    build_freetype
 	FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
 	if [ -n "$FOUND" ]; then
-	    echo "$FDK_AAC_PATH 已找到以下静态库文件："
+	    echo "$OPUS_PATH 已找到以下静态库文件："
 	    echo "$FOUND"
-	    echo "$FDK_AAC_PATH 已经编译完成"
+	    echo "$OPUS_PATH 已经编译完成"
 	else
-	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译X264"
+	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译opus"
     	    build_opus
 	fi
 	FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
@@ -166,7 +166,7 @@ build_armv7_all(){
 	    echo "$FOUND"
 	    echo "$OPENSSL_PATH 已经编译完成"
 	else
-	    echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译X264"
+	    echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译openssl"
     	    build_openssl
 	fi
     
@@ -241,18 +241,18 @@ build_arm64_all(){
 	    echo "$FOUND"
 	    echo "$FDK_AAC_PATH 已经编译完成"
 	else
-	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译X264"
+	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译FDK_AAC"
     	    build_fdk_aac
 	fi
 
 #    build_freetype
 	FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
 	if [ -n "$FOUND" ]; then
-	    echo "$FDK_AAC_PATH 已找到以下静态库文件："
+	    echo "$OPUS_PATH 已找到以下静态库文件："
 	    echo "$FOUND"
-	    echo "$FDK_AAC_PATH 已经编译完成"
+	    echo "$OPUS_PATH 已经编译完成"
 	else
-	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译X264"
+	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译opus"
     	    build_opus
 	fi
 	FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
@@ -261,11 +261,11 @@ build_arm64_all(){
 	    echo "$FOUND"
 	    echo "$OPENSSL_PATH 已经编译完成"
 	else
-	    echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译X264"
+	    echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译openssl"
     	    build_openssl
 	fi
     
-    # build_ffmpeg
+     build_ffmpeg
 }
 
 
@@ -280,11 +280,9 @@ build_arm64_all(){
     PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$OPUS_PATH/lib/pkgconfig"
     PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$OPENSSL_PATH/lib/pkgconfig"
 
-    # Include any existing PKG_CONFIG_PATH
-    PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH"
-
     # Export the final PKG_CONFIG_PATH
     export PKG_CONFIG_PATH
+    echo "PKG_CONFIG_PATH = ${PKG_CONFIG_PATH}"
 
 
      
@@ -297,7 +295,7 @@ build_ffmpeg() {
     setting_pkg
     cd $WORKSPACE_CURRENT/"ffmpeg-${FF_VERSION}"
     echo "Building FFmpeg for $ANDROID_ARCH..."
-     # 映射 ANDROID_ARCH 到 FFmpeg 识别的架构
+    # 映射 ANDROID_ARCH 到 FFmpeg 识别的架构
     case "$ANDROID_ARCH" in
         arch-arm) ARCH="arm" ;;
         arch-arm64) ARCH="aarch64" ;;
@@ -305,24 +303,26 @@ build_ffmpeg() {
         arch-x86_64) ARCH="x86_64" ;;
         *) echo "Error: Unsupported architecture $ANDROID_ARCH"; exit 1 ;;
     esac
+#    -mfpu=neon -mfloat-abi=softfp
+
+#		FFMPEG_CFLAGS+=" -I$X265_PATH/include"
+#		FFMPEG_LDFLAGS+=" -L$X265_PATH/lib"
     local FFMPEG_CFLAGS=""
 		FFMPEG_CFLAGS+=" -I$X264_PATH/include"
-		FFMPEG_CFLAGS+=" -I$X265_PATH/include"
 		FFMPEG_CFLAGS+=" -I$FDK_AAC_PATH/include"
 		FFMPEG_CFLAGS+=" -I$OPUS_PATH/include"
 		FFMPEG_CFLAGS+=" -I$OPENSSL_PATH/include"
 		FFMPEG_CFLAGS+=" -Os -fpic -DBIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD"
-		FFMPEG_CFLAGS+=" -fPIE -pie -DANDROID -mfpu=neon -mfloat-abi=softfp"
+		FFMPEG_CFLAGS+=" -fPIE -pie -DANDROID "
     local FFMPEG_LDFLAGS=""
 		FFMPEG_LDFLAGS+=" -L$X264_PATH/lib"
-		FFMPEG_LDFLAGS+=" -L$X265_PATH/lib"
 		FFMPEG_LDFLAGS+=" -L$FDK_AAC_PATH/lib"
 		FFMPEG_LDFLAGS+=" -L$OPUS_PATH/lib"
 		FFMPEG_LDFLAGS+=" -L$OPENSSL_PATH/lib"
 		FFMPEG_LDFLAGS+=" $ADDI_LDFLAGS"
     
     ./configure \
-        --prefix=$PREFIX \
+        --prefix=$(pwd)/install/${ANDROID_ABI} \
         --pkg-config="pkg-config --static" \
         --disable-doc \
         --enable-neon  \
@@ -352,8 +352,8 @@ build_ffmpeg() {
         --cxx=$CXX \
         --enable-libx264 \
         --enable-libopus \
-        --enable-openssl 
-#        --enable-libfdk-aac 
+        --enable-openssl \
+        --enable-libfdk-aac 
 #                --enable-libfreetype \
 #        --enable-libx265 \
 
@@ -362,7 +362,7 @@ build_ffmpeg() {
         exit 1
     fi
     	
-#    make clean
+    make clean
     make -j$(nproc) || { echo "Error: Build failed"; exit 1; }
     make install || { echo "Error: Installation failed"; exit 1; }
 
@@ -495,7 +495,7 @@ build_x265() {
 }
 
 build_fdk_aac() {
-    echo "Installing fdk-aac..."
+    echo "Installing fdk-aac... FDK_AAC_PATH=${FDK_AAC_PATH}"
 #    apt install autoconf
     local fdk_aac_version="2.0.3"
     local fdk_aac_tar="fdk-aac-${fdk_aac_version}.tar.gz"
@@ -513,23 +513,47 @@ build_fdk_aac() {
 
     
     cd fdk-aac-${fdk_aac_version}
-    export CC=$CC \
-    export CXX=$CXX
-	./autogen.sh
-    
+    export CC="${CC} --sysroot=${SYSROOT}"
+    export CXX="${CXX} --sysroot=${SYSROOT}"
+#报错 libSBRdec/src/lpp_tran.cpp:122:21: fatal error: log/log.h: No such file or directory
+ #include "log/log.h" 去掉这个头文件
+
+	export AR=${CROSS_PREFIX}ar
+	export LD=${CROSS_PREFIX}ld
+	export AS=${CROSS_PREFIX}as
+	export RANLIB=${CROSS_PREFIX}ranlib
+	export STRIP=${CROSS_PREFIX}strip
+	export CFLAGS="--sysroot=${SYSROOT} -I${SYSROOT}/usr/include -I${TOOLCHAIN}/include -isysroot ${SYSROOT} -Os -fpic"
+	export CPPFLAGS="${CFLAGS}"
+	export CXXFLAGS="${CFLAGS}"
+	export LDFLAGS="${LDFLAGS} -L${SYSROOT}/usr/lib -L${TOOLCHAIN}/lib "
+
+#	./autogen.sh
+# 映射 ANDROID_ARCH 到 FFmpeg 识别的架构
+    case "$ANDROID_ARCH" in
+        arch-arm) ARCH="arm" ;;
+        arch-arm64) ARCH="aarch64" ;;
+        arch-x86) ARCH="x86" ;;
+        arch-x86_64) ARCH="x86_64" ;;
+        *) echo "Error: Unsupported architecture $ANDROID_ARCH"; exit 1 ;;
+    esac
+     echo "buidl fdk-aac... FDK_AAC_PATH=${FDK_AAC_PATH} PLATFORM=${PLATFORM}"
     # mkdir -p build && cd build
+		
     ./configure --prefix=${FDK_AAC_PATH} \
-    			 --host=$HOST \
+    			 --host=${PLATFORM} \
     			 --enable-static \
     			 --enable-pic \
     			 --disable-shared \
-    			 --with-aix-soname=-arm \
+    			 --target=android \
+    			 --with-sysroot=${SYSROOT} \
     			 --disable-neon \
                 --disable-asm
     
     make clean			 
     make -j$(nproc)
     make install
+#    // readelf -h 可以查看具体架构
     cd $WORKSPACE_CURRENT
 }
 
@@ -568,12 +592,13 @@ build_opus() {
     echo "Building opus for $ANDROID_ARCH..."
 
    # 定义工具链路径
-    Android_Toolchain=${WORKSPACE_CURRENT}/android_toolchain
+    Android_Toolchain=${WORKSPACE_CURRENT}/android_toolchain/${HOST}
 
     # 检查工具链是否存在
     if [ ! -d "$Android_Toolchain" ]; then
         echo "Android toolchain not found. Creating toolchain..."
         sudo sh ${NDK_ROOT}/build/tools/make-standalone-toolchain.sh \
+            --toolchain=${CROSS_COMPILE} \
             --platform=android-${API} \
             --install-dir=${Android_Toolchain}
         if [ $? -ne 0 ]; then
@@ -600,20 +625,20 @@ build_opus() {
 
     # 设置环境变量
     export PATH=${Android_Toolchain}/bin:$PATH
-    export CC=arm-linux-androideabi-gcc
-    export CXX=arm-linux-androideabi-g++
+    export CC=${CROSS_COMPILE}gcc
+    export CXX=${CROSS_COMPILE}g++
 
     # 配置并编译 Opus
     ./configure --prefix=${OPUS_PATH} \
-                --host=${HOST} \
+                --host=${PLATFORM} \
                 --enable-fixed-point \
                 --enable-shared=0 \
                 --enable-static=yes \
                 --disable-asm \
                 --disable-doc \
-                CFLAGS="-O3 -mfpu=neon -mfloat-abi=softfp" \
+                CFLAGS="-O3 " \
                 HAVE_ARM_NEON_INTR=1
-
+#-mfpu=neon -mfloat-abi=softfp
     if [ $? -ne 0 ]; then
         echo "Error: Configuration failed."
         exit 1
@@ -651,8 +676,8 @@ build_openssl() {
     OPENSSL_TAR="openssl-${OPENSSL_VERSION}.tar.gz"
     OPENSSL_DIR="openssl-${OPENSSL_VERSION}"
     OPENSSL_URL="https://www.openssl.org/source/${OPENSSL_TAR}"
-   CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
-   CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
+    CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
+    CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
 
     # 检查并下载 OpenSSL 源码
     if [ ! -d "${OPENSSL_DIR}" ]; then
@@ -664,6 +689,7 @@ build_openssl() {
     else
         echo "OpenSSL source directory already exists. Skipping download."
     fi
+    
 
     cd ${OPENSSL_DIR} || { echo "Error: Failed to enter ${OPENSSL_DIR}"; exit 1; }
 
@@ -689,8 +715,26 @@ build_openssl() {
     make -j$(nproc) || { echo "Error: Build failed"; exit 1; }
     make install || { echo "Error: Installation failed"; exit 1; }
 
+
+    # 遍历输出目录中所有 .a 文件并检查架构
+    echo "Checking architectures of all .a files in ${OPUS_PATH}/lib..."
+    for file in ${OPUS_PATH}/lib/*.a; do
+        if [ -f "$file" ]; then
+            echo "File: $file"
+            readelf -h "$file" | grep "Machine"
+        else
+            echo "No .a files found in ${OPUS_PATH}/lib."
+            exit 1
+        fi
+    done
     cd $WORKSPACE_CURRENT || { echo "Error: Failed to return to workspace"; exit 1; }
 }
 	
-build_armv7_all
-#build_arm64_all
+#build_armv7_all
+
+
+
+
+
+
+build_arm64_all
