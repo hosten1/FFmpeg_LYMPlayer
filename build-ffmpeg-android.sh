@@ -269,12 +269,32 @@ build_arm64_all(){
 }
 
 
+ function setting_pkg() {
+    echo "pkgconfig=$(which pkgconfig)"
+    echo "pkgconfig=$(whereis pkgconfig)"
+     # Concatenate paths step by step
+    PKG_CONFIG_PATH="$X264_PATH/lib/pkgconfig"
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$X265_PATH/lib/pkgconfig"
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$FDK_AAC_PATH/lib/pkgconfig"
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$FREETYPE_PATH/lib/pkgconfig"
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$OPUS_PATH/lib/pkgconfig"
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$OPENSSL_PATH/lib/pkgconfig"
 
+    # Include any existing PKG_CONFIG_PATH
+    PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PKG_CONFIG_PATH"
+
+    # Export the final PKG_CONFIG_PATH
+    export PKG_CONFIG_PATH
+
+
+     
+}
 
 
 
 build_ffmpeg() {
     check_ffmpeg_source
+    setting_pkg
     cd $WORKSPACE_CURRENT/"ffmpeg-${FF_VERSION}"
     echo "Building FFmpeg for $ANDROID_ARCH..."
      # 映射 ANDROID_ARCH 到 FFmpeg 识别的架构
@@ -303,6 +323,7 @@ build_ffmpeg() {
     
     ./configure \
         --prefix=$PREFIX \
+        --pkg-config="pkg-config --static" \
         --disable-doc \
         --enable-neon  \
         --enable-hwaccels  \
@@ -315,6 +336,7 @@ build_ffmpeg() {
         --disable-avdevice \
         --disable-indev=v4l2 \
         --enable-gpl \
+        --enable-pic \
         --enable-nonfree \
         --enable-small \
         --enable-cross-compile \
@@ -324,23 +346,23 @@ build_ffmpeg() {
         --target-os=android \
         --arch="$ARCH" \
         --sysroot=$SYSROOT \
-        --enable-libx264 \
-        --enable-libx265 \
-        --enable-libfdk-aac \
-        --enable-libopus \
-        --enable-openssl \
         --extra-cflags="$FFMPEG_CFLAGS" \
     	   --extra-ldflags="$FFMPEG_LDFLAGS" \
         --cc=$CC \
-        --cxx=$CXX
+        --cxx=$CXX \
+        --enable-libx264 \
+        --enable-libopus \
+        --enable-openssl 
+#        --enable-libfdk-aac 
 #                --enable-libfreetype \
+#        --enable-libx265 \
 
    if [ $? -ne 0 ]; then
         echo "Error: Configuration failed."
         exit 1
     fi
     	
-    make clean
+#    make clean
     make -j$(nproc) || { echo "Error: Build failed"; exit 1; }
     make install || { echo "Error: Installation failed"; exit 1; }
 
@@ -474,7 +496,7 @@ build_x265() {
 
 build_fdk_aac() {
     echo "Installing fdk-aac..."
-    apt-get install autoconf
+#    apt install autoconf
     local fdk_aac_version="2.0.3"
     local fdk_aac_tar="fdk-aac-${fdk_aac_version}.tar.gz"
     local fdk_aac_url="https://downloads.sourceforge.net/opencore-amr/${fdk_aac_tar}"
@@ -483,12 +505,13 @@ build_fdk_aac() {
     if [[ ! -f ${fdk_aac_tar} ]]; then
         echo "fdk-aac tarball not found. Downloading..."
         wget ${fdk_aac_url} || { echo "Error: Failed to download ${fdk_aac_tar}"; exit 1; }
+        # 解压并安装
+    	  tar zxvf ${fdk_aac_tar}
     else
         echo "fdk-aac tarball already exists. Skipping download."
     fi
 
-    # 解压并安装
-    tar zxvf ${fdk_aac_tar}
+    
     cd fdk-aac-${fdk_aac_version}
     export CC=$CC \
     export CXX=$CXX
@@ -500,7 +523,9 @@ build_fdk_aac() {
     			 --enable-static \
     			 --enable-pic \
     			 --disable-shared \
-    			 --with-aix-soname=-arm
+    			 --with-aix-soname=-arm \
+    			 --disable-neon \
+                --disable-asm
     
     make clean			 
     make -j$(nproc)
@@ -582,7 +607,10 @@ build_opus() {
     ./configure --prefix=${OPUS_PATH} \
                 --host=${HOST} \
                 --enable-fixed-point \
-                --disable-float-api \
+                --enable-shared=0 \
+                --enable-static=yes \
+                --disable-asm \
+                --disable-doc \
                 CFLAGS="-O3 -mfpu=neon -mfloat-abi=softfp" \
                 HAVE_ARM_NEON_INTR=1
 
