@@ -163,7 +163,7 @@ build_armv7_all(){
 	FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
 	if [ -n "$FOUND" ]; then
 	    echo "$OPENSSL_PATH 已找到以下静态库文件："
-	    echo "$FOUND"
+	    echo "$FOUND" 
 	    echo "$OPENSSL_PATH 已经编译完成"
 	else
 	    echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译openssl"
@@ -328,7 +328,7 @@ build_ffmpeg() {
         --enable-neon  \
         --enable-hwaccels  \
         --enable-shared \
-        --disable-static \
+        --enable-static \
         --disable-x86asm \
         --disable-asm \
         --disable-symver \
@@ -730,11 +730,7 @@ build_openssl() {
     cd $WORKSPACE_CURRENT || { echo "Error: Failed to return to workspace"; exit 1; }
 }
 	
-#build_armv7_all
-
-
-
-
+build_armv7_all
 
 
 build_arm64_all
