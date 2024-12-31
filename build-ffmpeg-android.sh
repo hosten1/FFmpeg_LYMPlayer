@@ -14,10 +14,14 @@ then
     export NDK_ROOT=/Users/luoyongmeng/Documents/lym/ndklib/android-ndk-r17c
 
     export ANDROID_EABI_SYS=darwin-x86_64
+    export ANDROID_NDK_HOME="${NDK_ROOT}"
+
 elif [ "$OS" == "Linux" ]; then
     echo "Is Linux build..."
     export NDK_ROOT=/home/luoyongmeng/Documents/android-ndk-r17c
     export ANDROID_EABI_SYS=linux-x86_64
+    export ANDROID_NDK_HOME="${NDK_ROOT}"
+
 else
     echo "Unsupported operating system: $OS"
     exit 1
@@ -71,6 +75,7 @@ function check_ffmpeg_source() {
 }
 build_armv7_all(){
     # armeabi-v7a
+
     ANDROID_ABI=armeabi-v7a
     ANDROID_API=android-$API
     ANDROID_ARCH=arch-arm
@@ -86,6 +91,7 @@ build_armv7_all(){
     # TOOLCHAIN=$NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64
     TOOLCHAIN=$NDK_ROOT/toolchains/$ANDROID_EABI/prebuilt/$ANDROID_EABI_SYS
     SYSROOT=$NDK_ROOT/platforms/$ANDROID_API/$ANDROID_ARCH
+    
 
     PREFIX=$WORKSPACE_CURRENT/android/$ANDROID_ABI
     CROSS_PREFIX=$TOOLCHAIN/bin/$CROSS_COMPILE
@@ -100,16 +106,25 @@ build_armv7_all(){
     FDK_AAC_PATH=$WORKSPACE_CURRENT/third_party/fdk-aac/$ANDROID_ABI
     FREETYPE_PATH=$WORKSPACE_CURRENT/third_party/freetype/$ANDROID_ABI
     OPUS_PATH=$WORKSPACE_CURRENT/third_party/opus/$ANDROID_ABI
-    
+    OPENSSL_PATH=$WORKSPACE_CURRENT/third_party/ssl/$ANDROID_ABI
+
+     SSL_ANDROID_PLATFROM=android-arm
+    	# GitLqr：高版本 NDK 不再包含 gcc, 因此需要将 NDK 内置的 clang 加到入 PATH 环境变量中
+	export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$ANDROID_EABI_SYS/bin:$PATH
+	# GitLqr：编译 arm64 架构需要用到脚本
+#	export PATH=${TOOLCHAIN}/bin:$PATH
+
     ensure_directory_exists "${X264_PATH}"
     ensure_directory_exists "${X265_PATH}"
     ensure_directory_exists "${FDK_AAC_PATH}"
     ensure_directory_exists "${OPUS_PATH}"
+    ensure_directory_exists "${OPENSSL_PATH}"
     
     sudo chmod -R 777 ${X264_PATH}/
     sudo chmod -R 777 ${FDK_AAC_PATH}/
     sudo chmod -R 777 ${FDK_AAC_PATH}/
     sudo chmod -R 777 ${OPUS_PATH}/
+    sudo chmod -R 777 ${OPENSSL_PATH}/
 
     # Main flow
 
@@ -117,21 +132,49 @@ build_armv7_all(){
 	# 查找 .a 文件
 	FOUND=$(find "$X264_PATH" -type f -name "*.a")
 	if [ -n "$FOUND" ]; then
-	    echo "已找到以下静态库文件："
+	    echo "$X264_PATH 已找到以下静态库文件："
 	    echo "$FOUND"
-	    echo "已经编译完成"
+	    echo "$X264_PATH 已经编译完成"
 	else
-	    echo "未找到任何 .a 文件，开始编译X264"
-#    	build_x264
+	    echo "$X264_PATH 未找到任何 .a 文件，开始编译X264"
+    	    build_x264
 	fi
 #     build_x265
-#     build_fdk_aac
+	FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
+	if [ -n "$FOUND" ]; then
+	    echo "$FDK_AAC_PATH已找到以下静态库文件："
+	    echo "$FOUND"
+	    echo "$FDK_AAC_PATH 已经编译完成"
+	else
+	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译X264"
+    	    build_fdk_aac
+	fi
+
 #    build_freetype
-     build_opus
+	FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
+	if [ -n "$FOUND" ]; then
+	    echo "$FDK_AAC_PATH 已找到以下静态库文件："
+	    echo "$FOUND"
+	    echo "$FDK_AAC_PATH 已经编译完成"
+	else
+	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译X264"
+    	    build_opus
+	fi
+	FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
+	if [ -n "$FOUND" ]; then
+	    echo "$OPENSSL_PATH 已找到以下静态库文件："
+	    echo "$FOUND"
+	    echo "$OPENSSL_PATH 已经编译完成"
+	else
+	    echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译X264"
+    	    build_openssl
+	fi
+    
     # build_ffmpeg
 }
 build_arm64_all(){
    # arm64-v8a
+
     ANDROID_ABI=arm64-v8a
     ANDROID_API=android-${API}
     ANDROID_ARCH=arch-arm64
@@ -158,35 +201,70 @@ build_arm64_all(){
     FDK_AAC_PATH=$WORKSPACE_CURRENT/third_party/fdk-aac/$ANDROID_ABI
     FREETYPE_PATH=$WORKSPACE_CURRENT/third_party/freetype/$ANDROID_ABI
     OPUS_PATH=$WORKSPACE_CURRENT/third_party/opus/$ANDROID_ABI
+    OPENSSL_PATH=$WORKSPACE_CURRENT/third_party/ssl/$ANDROID_ABI
+
+     SSL_ANDROID_PLATFROM=android-arm64
+    	# GitLqr：高版本 NDK 不再包含 gcc, 因此需要将 NDK 内置的 clang 加到入 PATH 环境变量中
+	export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$ANDROID_EABI_SYS/bin:$PATH
+	# GitLqr：编译 arm64 架构需要用到脚本
+#	export PATH=${TOOLCHAIN}/bin:$PATH
 
     ensure_directory_exists "${X264_PATH}"
     ensure_directory_exists "${X265_PATH}"
     ensure_directory_exists "${FDK_AAC_PATH}"
     ensure_directory_exists "${OPUS_PATH}"
+    ensure_directory_exists "${OPENSSL_PATH}"
 
     sudo chmod -R 777 ${X264_PATH}/
     sudo chmod -R 777 ${FDK_AAC_PATH}/
     sudo chmod -R 777 ${FDK_AAC_PATH}/
     sudo chmod -R 777 ${OPUS_PATH}/
+    sudo chmod -R 777 ${OPENSSL_PATH}/
     
-    # Main flow
-    # 查找 .a 文件
-	FOUND=$(find "$X264_PATH" -type f -name "*.a")
-	
+	# Main flow
+
 	# 输出结果
+	# 查找 .a 文件
+	FOUND=$(find "$X264_PATH" -type f -name "*.a")
 	if [ -n "$FOUND" ]; then
-	    echo "已找到以下静态库文件："
+	    echo "$X264_PATH 已找到以下静态库文件："
 	    echo "$FOUND"
-	    echo "已经编译完成"
+	    echo "$X264_PATH 已经编译完成"
 	else
-	    echo "未找到任何 .a 文件，开始编译X264"
-#    	build_x264
+	    echo "$X264_PATH 未找到任何 .a 文件，开始编译X264"
+    	    build_x264
+	fi
+#     build_x265
+	FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
+	if [ -n "$FOUND" ]; then
+	    echo "$FDK_AAC_PATH已找到以下静态库文件："
+	    echo "$FOUND"
+	    echo "$FDK_AAC_PATH 已经编译完成"
+	else
+	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译X264"
+    	    build_fdk_aac
 	fi
 
-#     build_x265
-#    build_fdk_aac
 #    build_freetype
-    build_opus
+	FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
+	if [ -n "$FOUND" ]; then
+	    echo "$FDK_AAC_PATH 已找到以下静态库文件："
+	    echo "$FOUND"
+	    echo "$FDK_AAC_PATH 已经编译完成"
+	else
+	    echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译X264"
+    	    build_opus
+	fi
+	FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
+	if [ -n "$FOUND" ]; then
+	    echo "$OPENSSL_PATH 已找到以下静态库文件："
+	    echo "$FOUND"
+	    echo "$OPENSSL_PATH 已经编译完成"
+	else
+	    echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译X264"
+    	    build_openssl
+	fi
+    
     # build_ffmpeg
 }
 
@@ -463,6 +541,7 @@ build_opus() {
         echo "Error: Configuration failed."
         exit 1
     fi
+    make clean
 
     make -j$(nproc)
     if [ $? -ne 0 ]; then
@@ -504,6 +583,53 @@ build_opus() {
 #    make install
 #    cd $WORKSPACE_CURRENT
 }
+build_openssl() {
+    echo "Installing openssl..."
+    # 定义必要的变量
+    OPENSSL_VERSION="1.1.1k"
+    OPENSSL_TAR="openssl-${OPENSSL_VERSION}.tar.gz"
+    OPENSSL_DIR="openssl-${OPENSSL_VERSION}"
+    OPENSSL_URL="https://www.openssl.org/source/${OPENSSL_TAR}"
+   CC=$TOOLCHAIN/bin/${PLATFORM}${API}-clang
+   CXX=$TOOLCHAIN/bin/${PLATFORM}${API}-clang++
+
+    # 检查并下载 OpenSSL 源码
+    if [ ! -d "${OPENSSL_DIR}" ]; then
+        if [ ! -f "${OPENSSL_TAR}" ]; then
+            echo "Downloading OpenSSL source..."
+            wget ${OPENSSL_URL} || { echo "Error: Failed to download ${OPENSSL_TAR}"; exit 1; }
+        fi
+        tar zxf ${OPENSSL_TAR} || { echo "Error: Failed to extract ${OPENSSL_TAR}"; exit 1; }
+    else
+        echo "OpenSSL source directory already exists. Skipping download."
+    fi
+
+    cd ${OPENSSL_DIR} || { echo "Error: Failed to enter ${OPENSSL_DIR}"; exit 1; }
+
+#CROSS_PREFIX
+    # 配置和编译
+    ./Configure ${SSL_ANDROID_PLATFROM} \
+    				no-shared \
+    				no-ssl2 \
+    				no-ssl3 \
+    				no-comp \
+    				no-asm \
+    				no-engine \
+    				no-unit-test \
+    				--prefix=${OPENSSL_PATH} \
+    				--cross-compile-prefix=${CROSS_PREFIX} \
+    				-D__ANDROID_API__=${API} || { echo "Error: Configuration failed"; exit 1; }
+    if [ $? -ne 0 ]; then
+        echo "Error: Configuration failed."
+        exit 1
+    fi
+    	
+    make clean
+    make -j$(nproc) || { echo "Error: Build failed"; exit 1; }
+    make install || { echo "Error: Installation failed"; exit 1; }
+
+    cd $WORKSPACE_CURRENT || { echo "Error: Failed to return to workspace"; exit 1; }
+}
 	
-#build_armv7_all
-build_arm64_all
+build_armv7_all
+#build_arm64_all
