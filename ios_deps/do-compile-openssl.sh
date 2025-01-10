@@ -168,10 +168,12 @@ echo "--------------------"
 export DEBUG_INFORMATION_FORMAT=dwarf-with-dsym
 
 cd $FF_BUILD_SOURCE
-if [ -f "./Makefile" ]; then
-    echo 'reuse configure'
-else
-    echo "config: $OPENSSL_CFG_FLAGS"
+# if [ -f "./Makefile" ]; then
+#     echo 'reuse configure'
+# else
+   
+# fi
+ echo "config: $OPENSSL_CFG_FLAGS"
     ./Configure \
         $OPENSSL_CFG_FLAGS \
         --prefix="${FF_BUILD_PREFIX}" \
@@ -180,8 +182,6 @@ else
         no-tests \
         no-shared
     make clean
-fi
-
 #--------------------
 echo "\n--------------------"
 echo "[*] compile openssl"

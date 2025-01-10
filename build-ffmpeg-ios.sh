@@ -63,7 +63,7 @@ function check_ffmpeg_source() {
 build_ios_all() {
     # iOS 架构
     # IOS_ARCHS=("armv7" "arm64" "x86_64" "i386")
-    IOS_ARCHS=("arm64")
+    IOS_ARCHS=("armv7")
 
     for ARCH in "${IOS_ARCHS[@]}"; do
         build_ios_arch "$ARCH"
@@ -99,35 +99,35 @@ build_ios_arch() {
 
     # 输出结果
     # 查找 .a 文件
-    # FOUND=$(find "$X264_PATH" -type f -name "*.a")
-    # if [ -n "$FOUND" ]; then
-    #     echo "$X264_PATH 已找到以下静态库文件："
-    #     echo "$FOUND"
-    #     echo "$X264_PATH 已经编译完成"
-    # else
-    #     echo "$X264_PATH 未找到任何 .a 文件，开始编译X264"
-    #     build_x264 "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
-    # fi
+    FOUND=$(find "$X264_PATH" -type f -name "*.a")
+    if [ -n "$FOUND" ]; then
+        echo "$X264_PATH 已找到以下静态库文件："
+        echo "$FOUND"
+        echo "$X264_PATH 已经编译完成"
+    else
+        echo "$X264_PATH 未找到任何 .a 文件，开始编译X264"
+        build_x264 "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+    fi
 
-    # FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
-    # if [ -n "$FOUND" ]; then
-    #     echo "$FDK_AAC_PATH 已找到以下静态库文件："
-    #     echo "$FOUND"
-    #     echo "$FDK_AAC_PATH 已经编译完成"
-    # else
-    #     echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译FDK_AAC"
-    #     build_fdk_aac "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
-    # fi
+    FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
+    if [ -n "$FOUND" ]; then
+        echo "$FDK_AAC_PATH 已找到以下静态库文件："
+        echo "$FOUND"
+        echo "$FDK_AAC_PATH 已经编译完成"
+    else
+        echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译FDK_AAC"
+        build_fdk_aac "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+    fi
 
-    # FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
-    # if [ -n "$FOUND" ]; then
-    #     echo "$OPUS_PATH 已找到以下静态库文件："
-    #     echo "$FOUND"
-    #     echo "$OPUS_PATH 已经编译完成"
-    # else
-    #     echo "$OPUS_PATH 未找到任何 .a 文件，开始编译opus"
-    #     build_opus "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
-    # fi
+    FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
+    if [ -n "$FOUND" ]; then
+        echo "$OPUS_PATH 已找到以下静态库文件："
+        echo "$FOUND"
+        echo "$OPUS_PATH 已经编译完成"
+    else
+        echo "$OPUS_PATH 未找到任何 .a 文件，开始编译opus"
+        build_opus "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+    fi
 
     FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
     if [ -n "$FOUND" ]; then
