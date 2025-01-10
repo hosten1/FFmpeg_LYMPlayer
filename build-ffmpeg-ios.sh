@@ -85,10 +85,10 @@ build_ios_arch() {
     local PREFIX=$WORKSPACE_CURRENT/ios/$IOS_ARCH
     local CROSS_PREFIX=$IOS_TOOLCHAIN/
 
-    local X264_PATH=$WORKSPACE_CURRENT/third_party/x264/$IOS_ARCH
-    local FDK_AAC_PATH=$WORKSPACE_CURRENT/third_party/fdk-aac/$IOS_ARCH
-    local OPUS_PATH=$WORKSPACE_CURRENT/third_party/opus/$IOS_ARCH
-    local OPENSSL_PATH=$WORKSPACE_CURRENT/third_party/ssl/$IOS_ARCH
+    X264_PATH=$WORKSPACE_CURRENT/third_party/x264/$IOS_ARCH
+    FDK_AAC_PATH=$WORKSPACE_CURRENT/third_party/fdk-aac/$IOS_ARCH
+    OPUS_PATH=$WORKSPACE_CURRENT/third_party/opus/$IOS_ARCH
+    OPENSSL_PATH=$WORKSPACE_CURRENT/third_party/ssl/$IOS_ARCH
 
     ensure_directory_exists "${X264_PATH}"
     ensure_directory_exists "${FDK_AAC_PATH}"
@@ -109,25 +109,25 @@ build_ios_arch() {
     #     build_x264 "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
     # fi
 
-    # FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
-    # if [ -n "$FOUND" ]; then
-    #     echo "$FDK_AAC_PATH 已找到以下静态库文件："
-    #     echo "$FOUND"
-    #     echo "$FDK_AAC_PATH 已经编译完成"
-    # else
-    #     echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译FDK_AAC"
-    #     build_fdk_aac "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
-    # fi
-
-    FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
+    FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
     if [ -n "$FOUND" ]; then
-        echo "$OPUS_PATH 已找到以下静态库文件："
+        echo "$FDK_AAC_PATH 已找到以下静态库文件："
         echo "$FOUND"
-        echo "$OPUS_PATH 已经编译完成"
+        echo "$FDK_AAC_PATH 已经编译完成"
     else
-        echo "$OPUS_PATH 未找到任何 .a 文件，开始编译opus"
-        build_opus "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+        echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译FDK_AAC"
+        build_fdk_aac "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
     fi
+
+    # FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
+    # if [ -n "$FOUND" ]; then
+    #     echo "$OPUS_PATH 已找到以下静态库文件："
+    #     echo "$FOUND"
+    #     echo "$OPUS_PATH 已经编译完成"
+    # else
+    #     echo "$OPUS_PATH 未找到任何 .a 文件，开始编译opus"
+    #     build_opus "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+    # fi
 
     # FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
     # if [ -n "$FOUND" ]; then
@@ -267,10 +267,7 @@ build_x264() {
 
 build_fdk_aac() {
     cd ios_deps || exit 1
-    # local IOS_ARCH=$1
-    # local IOS_SDK=$2
-    # local IOS_SYSROOT=$3
-    # local IOS_TOOLCHAIN=$4
+    local IOS_ARCH=$1
 
     echo "Installing fdk-aac... FDK_AAC_PATH=${FDK_AAC_PATH}"
     local fdk_aac_version="2.0.3"
@@ -288,11 +285,8 @@ build_fdk_aac() {
     fi
     # cd fdk_aac_dir
     echo "Compiling fdk_aac for $IOS_ARCH pwd: $(pwd)"
-    ./build-fdk-aac.sh
-    cd $WORKSPACE_CURRENT
-
-   
-    # cd $WORKSPACE_CURRENT
+    ./build-fdk-aac.sh "$(pwd)/${fdk_aac_dir}" "$FDK_AAC_PATH" "$IOS_ARCH"
+    cd "$WORKSPACE_CURRENT" || exit 
 }
 
 build_opus() {
@@ -333,97 +327,6 @@ build_opus() {
 
     # ./build-libopus.sh
     cd $WORKSPACE_CURRENT
-    # local OPT_CFLAGS="-Ofast -flto -g"
-    # local OPT_LDFLAGS="-flto"
-    # local OPT_CONFIG_ARGS=""
-
-    # lcoal INTERDIR="$(pwd)/src/built"
-    # mkdir -p $INTERDIR
-   
-    # lcoal CCACHE=`which ccache`
-    # if [ $? == "0" ]; then
-    #     echo "Building with ccache: $CCACHE"
-    #     CCACHE="${CCACHE} "
-    # else
-    #     echo "Building without ccache"
-    #     CCACHE=""
-    # fi
-
-	#     CFLAGS="-arch $ARCH"
-
-	# 	if [ "$ARCH" = "i386" -o "$ARCH" = "x86_64" ]
-	# 	then
-	# 	    PLATFORM="iPhoneSimulator"
-	# 	    CPU=
-	# 	    if [ "$ARCH" = "x86_64" ]
-	# 	    then
-	# 	    	CFLAGS="$CFLAGS -mios-simulator-version-min=7.0"
-	# 		HOST="--host=x86_64-apple-darwin"
-	# 	    else
-	# 	    	CFLAGS="$CFLAGS -mios-simulator-version-min=7.0"
-	# 		HOST="--host=i386-apple-darwin"
-	# 	    fi
-	# 	else
-	# 	    PLATFORM="iPhoneOS"
-	# 	    if [ $ARCH = arm64 ]
-	# 	    then
-	# 	        HOST="--host=aarch64-apple-darwin"
-    #         else
-	# 	        HOST="--host=arm-apple-darwin"
-	#             fi
-	# 	    CFLAGS="$CFLAGS -fembed-bitcode"
-	# 	fi
-
-	# 	XCRUN_SDK=`echo $PLATFORM | tr '[:upper:]' '[:lower:]'`
-	# 	CC="xcrun -sdk $XCRUN_SDK clang -Wno-error=unused-command-line-argument-hard-error-in-future"
-	# 	AS="$CWD/$SOURCE/extras/gas-preprocessor.pl $CC"
-	# 	CXXFLAGS="$CFLAGS"
-	# 	LDFLAGS="$CFLAGS"
- 
-	# mkdir -p "${INTERDIR}/${PLATFORM}${SDKVERSION}-${ARCH}.sdk"
-
-    # # 配置并编译 Opus
-    # ./configure \
-    #     --enable-float-approx \
-    #     --disable-shared \
-    #     --enable-static \
-    #     --with-pic \
-    #     --disable-extra-programs -\
-    #     -disable-doc 
-    #     ${EXTRA_CONFIG} \
-    #      $CONFIGURE_FLAGS \
-	# 	 $HOST \
-	# 	    $CPU \
-	# 	    CC="$CC" \
-	# 	    CXX="$CC" \
-	# 	    CPP="$CC -E" \
-    #         AS="$AS" \
-	# 	    CFLAGS="$CFLAGS" \
-	# 	    LDFLAGS="$LDFLAGS" \
-	# 	    CPPFLAGS="$CFLAGS" \
-    #     --prefix="${INTERDIR}/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" \
-       
-
-    # if [ $? -ne 0 ]; then
-    #     echo "Error: Configuration failed."
-    #     exit 1
-    # fi
-    # make clean
-
-    # make -j$(nproc)
-    # if [ $? -ne 0 ]; then
-    #     echo "Error: Build failed."
-    #     exit 1
-    # fi
-
-    # make install
-    # if [ $? -ne 0 ]; then
-    #     echo "Error: Installation failed."
-    #     exit 1
-    # fi
-
-    # echo "Opus build and installation completed successfully."
-    # cd $WORKSPACE_CURRENT
 }
 
 build_openssl() {
@@ -471,10 +374,10 @@ build_openssl() {
     fi
 
     make clean
-    make -j$(nproc) || { echo "Error: Build failed"; exit 1; }
+    make -j"$(nproc)" || { echo "Error: Build failed"; exit 1; }
     make install || { echo "Error: Installation failed"; exit 1; }
 
-    cd $WORKSPACE_CURRENT || { echo "Error: Failed to return to workspace"; exit 1; }
+    cd "$WORKSPACE_CURRENT" || { echo "Error: Failed to return to workspace"; exit 1; }
 }
 
 build_ios_all
