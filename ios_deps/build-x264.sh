@@ -47,7 +47,8 @@ build_arch() {
 		|| exit 1
     fi
     local AS="${GAS_PREPROCESSOR} $CC"
-	CFLAGS="-arch $ARCH $SIMULATOR  -fembed-bitcode"
+	# -fembed-bitcode
+	CFLAGS="-arch $ARCH $SIMULATOR"
 	CXXFLAGS="$CFLAGS"
 	LDFLAGS="$CFLAGS"
  

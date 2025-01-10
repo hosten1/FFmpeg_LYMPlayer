@@ -63,7 +63,7 @@ function check_ffmpeg_source() {
 build_ios_all() {
     # iOS 架构
     # IOS_ARCHS=("armv7" "arm64" "x86_64" "i386")
-    IOS_ARCHS=("armv7")
+    IOS_ARCHS=("arm64")
 
     for ARCH in "${IOS_ARCHS[@]}"; do
         build_ios_arch "$ARCH"
@@ -72,18 +72,6 @@ build_ios_all() {
 
 build_ios_arch() {
     local IOS_ARCH=$1
-    local IOS_SDK="iphoneos"
-    local IOS_MIN_VERSION="10.0"
-
-    if [[ "$IOS_ARCH" == "x86_64" || "$IOS_ARCH" == "i386" ]]; then
-        IOS_SDK="iphonesimulator"
-    fi
-
-    local IOS_TOOLCHAIN=$(xcrun -sdk $IOS_SDK --show-sdk-platform-path)/Developer/usr/bin
-    local IOS_SYSROOT=$(xcrun -sdk $IOS_SDK --show-sdk-path)
-
-    local PREFIX=$WORKSPACE_CURRENT/ios/$IOS_ARCH
-    local CROSS_PREFIX=$IOS_TOOLCHAIN/
 
     X264_PATH=$WORKSPACE_CURRENT/third_party/x264/$IOS_ARCH
     FDK_AAC_PATH=$WORKSPACE_CURRENT/third_party/fdk-aac/$IOS_ARCH
@@ -106,7 +94,7 @@ build_ios_arch() {
         echo "$X264_PATH 已经编译完成"
     else
         echo "$X264_PATH 未找到任何 .a 文件，开始编译X264"
-        build_x264 "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+        build_x264 "$IOS_ARCH"
     fi
 
     FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
@@ -116,7 +104,7 @@ build_ios_arch() {
         echo "$FDK_AAC_PATH 已经编译完成"
     else
         echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译FDK_AAC"
-        build_fdk_aac "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+        build_fdk_aac "$IOS_ARCH"
     fi
 
     FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
@@ -126,7 +114,7 @@ build_ios_arch() {
         echo "$OPUS_PATH 已经编译完成"
     else
         echo "$OPUS_PATH 未找到任何 .a 文件，开始编译opus"
-        build_opus "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+        build_opus "$IOS_ARCH"
     fi
 
     FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
@@ -136,10 +124,10 @@ build_ios_arch() {
         echo "$OPENSSL_PATH 已经编译完成"
     else
         echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译openssl"
-        build_openssl "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+        build_openssl "$IOS_ARCH"
     fi
 
-    # build_ffmpeg "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+    build_ffmpeg "$IOS_ARCH"
 }
 
 
@@ -161,24 +149,66 @@ function setting_pkg() {
 
 
 build_ffmpeg() {
-    local IOS_ARCH=$1
-    local IOS_SDK=$2
-    local IOS_SYSROOT=$3
-    local IOS_TOOLCHAIN=$4
+    if [ ! $(which yasm) ]
+	then
+		echo 'Yasm not found'
+		if [ ! $(which brew) ]
+		then
+			echo 'Homebrew not found. Trying to install...'
+                        ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" \
+				|| exit 1
+		fi
+		echo 'Trying to install Yasm...'
+		brew install yasm || exit 1
+	fi
+	if [ ! $(which gas-preprocessor.pl) ]
+	then
+		echo 'gas-preprocessor.pl not found. Trying to install...'
+		(curl -L https://github.com/libav/gas-preprocessor/raw/master/gas-preprocessor.pl \
+			-o /usr/local/bin/gas-preprocessor.pl \
+			&& chmod +x /usr/local/bin/gas-preprocessor.pl) \
+			|| exit 1
+	fi
 
+    local ARCH=$1
+    local DEPLOYMENT_TARGET="8.0"
+    local PLATFORM=""
+    local CFLAGS="-arch $ARCH"
     check_ffmpeg_source
     setting_pkg
-    cd $WORKSPACE_CURRENT/"ffmpeg-${FF_VERSION}"
-    echo "Building FFmpeg for $ANDROID_ARCH..."
-     local FFMPEG_CFLAGS=""
+    if [ "$ARCH" = "i386" -o "$ARCH" = "x86_64" ]; then
+		PLATFORM="iPhoneSimulator"
+		CFLAGS="$CFLAGS -mios-simulator-version-min=$DEPLOYMENT_TARGET"
+	else
+		PLATFORM="iPhoneOS"
+		CFLAGS="$CFLAGS -mios-version-min=$DEPLOYMENT_TARGET -fembed-bitcode"
+		if [ "$ARCH" = "arm64" ]
+		then
+		    EXPORT="GASPP_FIX_XCODE5=1"
+		fi
+	fi
+
+    local XCRUN_SDK
+    XCRUN_SDK=$(echo $PLATFORM | tr '[:upper:]' '[:lower:]')
+    CC="xcrun -sdk $XCRUN_SDK clang -Wno-error=unused-command-line-argument  -arch $ARCH"
+
+	# force "configure" to use "gas-preprocessor.pl" (FFmpeg 3.3)
+	if [ "$ARCH" = "arm64" ]; then
+		AS="gas-preprocessor.pl -arch aarch64 -- $CC"
+	else
+		AS="gas-preprocessor.pl -- $CC"
+	fi		
+    cd "$WORKSPACE_CURRENT"/"ffmpeg-${FF_VERSION}" || exit
+    echo "Building FFmpeg for $ARCH ..."
+    local FFMPEG_CFLAGS="$CFLAGS"
     FFMPEG_CFLAGS+=" -I$X264_PATH/include"
     FFMPEG_CFLAGS+=" -I$FDK_AAC_PATH/include"
     FFMPEG_CFLAGS+=" -I$OPUS_PATH/include"
     FFMPEG_CFLAGS+=" -I$OPENSSL_PATH/include"
-    FFMPEG_CFLAGS+=" -Os -fpic -DBIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD"
-    FFMPEG_CFLAGS+=" -fPIE -pie -DANDROID "
+    # FFMPEG_CFLAGS+=" -Os -fpic -DBIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD"
+    # FFMPEG_CFLAGS+=" -fPIE -pie -DIOS "
 
-    local FFMPEG_LDFLAGS=""
+    local FFMPEG_LDFLAGS="$LDFLAGS"
     FFMPEG_LDFLAGS+=" -L$X264_PATH/lib"
     FFMPEG_LDFLAGS+=" -L$FDK_AAC_PATH/lib"
     FFMPEG_LDFLAGS+=" -L$OPUS_PATH/lib"
@@ -187,12 +217,11 @@ build_ffmpeg() {
 
     
     ./configure \
-        --prefix=$(pwd)/install/${IOS_ARCH} \
+        --prefix="$(pwd)/install/${IOS_ARCH}" \
         --pkg-config="pkg-config --static" \
         --disable-doc \
         --enable-neon  \
         --enable-hwaccels  \
-        --enable-shared \
         --enable-static \
         --disable-x86asm \
         --disable-asm \
@@ -205,16 +234,14 @@ build_ffmpeg() {
         --enable-nonfree \
         --enable-small \
         --enable-cross-compile \
-        --enable-jni \
         --enable-protocols \
-        --cross-prefix=$IOS_TOOLCHAIN \
         --target-os=darwin \
-        --arch="$IOS_ARCH" \
+        --arch="$ARCH" \
         --sysroot=$IOS_SYSROOT \
         --extra-cflags="$FFMPEG_CFLAGS" \
     	--extra-ldflags="$FFMPEG_LDFLAGS" \
-        --cc=$CC \
-        --cxx=$CXX \
+        --cc="$CC" \
+        --as="$AS" \
         --enable-libx264 \
         --enable-libopus \
         --enable-openssl \

@@ -35,13 +35,13 @@ build_arch() {
         else
             HOST="--host=arm-apple-darwin"
         fi
-        CFLAGS="$CFLAGS -fembed-bitcode"
+        # CFLAGS="$CFLAGS -fembed-bitcode"
     fi
 
 	 # 设置 Xcode 编译器
     local XCRUN_SDK
     XCRUN_SDK=$(echo $PLATFORM | tr '[:upper:]' '[:lower:]')
-    local CC="xcrun -sdk $XCRUN_SDK clang -Wno-error=unused-command-line-argument-hard-error-in-future  -arch $ARCH"
+    local CC="xcrun -sdk $XCRUN_SDK clang -Wno-error=unused-command-line-argument-hard  -arch $ARCH"
     local AS="$SRC_PATH/extras/gas-preprocessor.pl $CC"
     local CXXFLAGS="$CFLAGS"
     local LDFLAGS="$CFLAGS"
