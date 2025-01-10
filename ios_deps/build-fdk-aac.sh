@@ -41,14 +41,13 @@ build_arch() {
 	 # 设置 Xcode 编译器
     local XCRUN_SDK
     XCRUN_SDK=$(echo $PLATFORM | tr '[:upper:]' '[:lower:]')
-    local CC="xcrun -sdk $XCRUN_SDK clang -Wno-error=unused-command-line-argument-hard-error-in-future"
+    local CC="xcrun -sdk $XCRUN_SDK clang -Wno-error=unused-command-line-argument-hard-error-in-future  -arch $ARCH"
     local AS="$SRC_PATH/extras/gas-preprocessor.pl $CC"
     local CXXFLAGS="$CFLAGS"
     local LDFLAGS="$CFLAGS"
      # 显式设置 C++ 预处理器
     # local CPP="xcrun -sdk $XCRUN_SDK clang -E"
 	./configure \
-		    "$CONFIGURE_FLAGS" \
 		    $HOST \
 		    CC="$CC" \
 		    CXX="$CC" \
@@ -61,7 +60,7 @@ build_arch() {
 			--with-pic=yes \
 			--disable-shared \
 		    --prefix="$PREFIX"
-
+        make  clean
 		make -j"$(nproc)" && make install
 		cd $CWD || exit
 }

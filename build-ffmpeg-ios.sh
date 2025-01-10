@@ -99,25 +99,25 @@ build_ios_arch() {
 
     # 输出结果
     # 查找 .a 文件
-    # FOUND=$(find "$X264_PATH" -type f -name "*.a")
-    # if [ -n "$FOUND" ]; then
-    #     echo "$X264_PATH 已找到以下静态库文件："
-    #     echo "$FOUND"
-    #     echo "$X264_PATH 已经编译完成"
-    # else
-    #     echo "$X264_PATH 未找到任何 .a 文件，开始编译X264"
-    #     build_x264 "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
-    # fi
-
-    FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
+    FOUND=$(find "$X264_PATH" -type f -name "*.a")
     if [ -n "$FOUND" ]; then
-        echo "$FDK_AAC_PATH 已找到以下静态库文件："
+        echo "$X264_PATH 已找到以下静态库文件："
         echo "$FOUND"
-        echo "$FDK_AAC_PATH 已经编译完成"
+        echo "$X264_PATH 已经编译完成"
     else
-        echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译FDK_AAC"
-        build_fdk_aac "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+        echo "$X264_PATH 未找到任何 .a 文件，开始编译X264"
+        build_x264 "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
     fi
+
+    # FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
+    # if [ -n "$FOUND" ]; then
+    #     echo "$FDK_AAC_PATH 已找到以下静态库文件："
+    #     echo "$FOUND"
+    #     echo "$FDK_AAC_PATH 已经编译完成"
+    # else
+    #     echo "$FDK_AAC_PATH 未找到任何 .a 文件，开始编译FDK_AAC"
+    #     build_fdk_aac "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+    # fi
 
     # FOUND=$(find "$OPUS_PATH" -type f -name "*.a")
     # if [ -n "$FOUND" ]; then
@@ -261,8 +261,8 @@ build_x264() {
     # 进入 x264 目录
     # cd ${x264_dir}
     echo "Compiling x264 for $IOS_ARCH pwd: $(pwd)"
-    ./build-x264.sh
-    cd $WORKSPACE_CURRENT
+    ./build-x264.sh "$(pwd)/${x264_dir}" "$X264_PATH" "$IOS_ARCH"
+    cd "$WORKSPACE_CURRENT" || exit
 }
 
 build_fdk_aac() {
