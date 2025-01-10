@@ -99,15 +99,15 @@ build_ios_arch() {
 
     # 输出结果
     # 查找 .a 文件
-    FOUND=$(find "$X264_PATH" -type f -name "*.a")
-    if [ -n "$FOUND" ]; then
-        echo "$X264_PATH 已找到以下静态库文件："
-        echo "$FOUND"
-        echo "$X264_PATH 已经编译完成"
-    else
-        echo "$X264_PATH 未找到任何 .a 文件，开始编译X264"
-        build_x264 "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
-    fi
+    # FOUND=$(find "$X264_PATH" -type f -name "*.a")
+    # if [ -n "$FOUND" ]; then
+    #     echo "$X264_PATH 已找到以下静态库文件："
+    #     echo "$FOUND"
+    #     echo "$X264_PATH 已经编译完成"
+    # else
+    #     echo "$X264_PATH 未找到任何 .a 文件，开始编译X264"
+    #     build_x264 "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+    # fi
 
     # FOUND=$(find "$FDK_AAC_PATH" -type f -name "*.a")
     # if [ -n "$FOUND" ]; then
@@ -129,15 +129,15 @@ build_ios_arch() {
     #     build_opus "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
     # fi
 
-    # FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
-    # if [ -n "$FOUND" ]; then
-    #     echo "$OPENSSL_PATH 已找到以下静态库文件："
-    #     echo "$FOUND"
-    #     echo "$OPENSSL_PATH 已经编译完成"
-    # else
-    #     echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译openssl"
-    #     build_openssl "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
-    # fi
+    FOUND=$(find "$OPENSSL_PATH" -type f -name "*.a")
+    if [ -n "$FOUND" ]; then
+        echo "$OPENSSL_PATH 已找到以下静态库文件："
+        echo "$FOUND"
+        echo "$OPENSSL_PATH 已经编译完成"
+    else
+        echo "$OPENSSL_PATH 未找到任何 .a 文件，开始编译openssl"
+        build_openssl "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
+    fi
 
     # build_ffmpeg "$IOS_ARCH" "$IOS_SDK" "$IOS_SYSROOT" "$IOS_TOOLCHAIN"
 }
@@ -330,12 +330,14 @@ build_opus() {
 }
 
 build_openssl() {
-    local IOS_ARCH=$1
-    local IOS_SDK=$2
-    local IOS_SYSROOT=$3
-    local IOS_TOOLCHAIN=$4
+    cd ios_deps || exit 1
+    # sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+    local ARCH=$1
+    # local IOS_SDK=$2
+    # local IOS_SYSROOT=$3
+    # local IOS_TOOLCHAIN=$4
 
-    echo "Installing openssl..."
+     echo "Building openssl( for $IOS_ARCH..."
     # 定义必要的变量
     OPENSSL_VERSION="1.1.1k"
     OPENSSL_TAR="openssl-${OPENSSL_VERSION}.tar.gz"
@@ -353,29 +355,8 @@ build_openssl() {
         echo "OpenSSL source directory already exists. Skipping download."
     fi
 
-    cd ${OPENSSL_DIR} || { echo "Error: Failed to enter ${OPENSSL_DIR}"; exit 1; }
-
-    # 配置和编译
-    ./Configure ios-cross \
-                no-shared \
-                no-ssl2 \
-                no-ssl3 \
-                no-comp \
-                no-asm \
-                no-engine \
-                no-unit-test \
-                --prefix=${OPENSSL_PATH} \
-                --cross-compile-prefix=${IOS_TOOLCHAIN}/ \
-                -D__IPHONE_OS_VERSION_MIN_REQUIRED=${IOS_MIN_VERSION} || { echo "Error: Configuration failed"; exit 1; }
-
-    if [ $? -ne 0 ]; then
-        echo "Error: Configuration failed."
-        exit 1
-    fi
-
-    make clean
-    make -j"$(nproc)" || { echo "Error: Build failed"; exit 1; }
-    make install || { echo "Error: Installation failed"; exit 1; }
+    # cd ${OPENSSL_DIR} || { echo "Error: Failed to enter ${OPENSSL_DIR}"; exit 1; }
+     ./do-compile-openssl.sh "$ARCH" "$(pwd)/${OPENSSL_DIR}" "${OPENSSL_PATH}"
 
     cd "$WORKSPACE_CURRENT" || { echo "Error: Failed to return to workspace"; exit 1; }
 }

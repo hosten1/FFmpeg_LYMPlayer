@@ -16,7 +16,7 @@ build_arch() {
 	# 进入源码目录
 	cd "$SRC_PATH" || exit
 	# local CFLAGS="-arch $ARCH"
-	 # 配置架构和平台
+	# 配置架构和平台
     if [ "$ARCH" = "i386" -o "$ARCH" = "x86_64" ]; then
         PLATFORM="iPhoneSimulator"
         if [ "$ARCH" = "x86_64" ]; then
@@ -37,7 +37,7 @@ build_arch() {
 
 	 # 设置 Xcode 编译器
     XCRUN_SDK=$(echo $PLATFORM | tr '[:upper:]' '[:lower:]')
-    CC="xcrun -sdk $XCRUN_SDK clang -Wno-error=unused-command-line-argument-hard-error-in-future  -arch $ARCH"
+    CC="xcrun -sdk $XCRUN_SDK clang -Wno-error=unused-command-line-argument  -arch $ARCH"
 	local GAS_PREPROCESSOR=$SRC_PATH/extras/gas-preprocessor.pl
 	 if [ ! -r "$GAS_PREPROCESSOR" ];then
 		echo 'gas-preprocessor.pl not found. Trying to install...'
@@ -64,7 +64,8 @@ build_arch() {
 		    --extra-ldflags="$LDFLAGS" \
 		    --prefix="$PREFIX"
 
-	make -j3 install || exit 1
+	make -j"$(nproc)"  || exit 1
+	make install || exit 1
 	cd $CWD || exit
 }
 
